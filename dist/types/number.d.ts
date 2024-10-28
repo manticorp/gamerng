@@ -22,7 +22,7 @@ export declare class ArrayNumberValidator {
     /**
      * Specify the numbers to validate
      */
-    validate(numbers: number | number[]): NumberValidator | this;
+    validate(numbers: number | number[]): this | NumberValidator;
     /**
      * Pass a string decribing the varname to this to make the error messages
      * make more sense in your context.
@@ -162,7 +162,7 @@ export declare class NumberValidator {
     /**
      * Specify the number to be validated
      */
-    validate(number: number | number[]): this | ArrayNumberValidator;
+    validate(number: number | number[]): ArrayNumberValidator | this;
     /**
      * Asserts that the number is an integer
      * @throws {@link NumberValidationError} if ths number is not an integer
