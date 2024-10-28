@@ -1,0 +1,22 @@
+[
+  {
+    "id": "goblin",
+    "hp": {"min": 1, "max": 5},
+    "attack": "1d6+1"
+  },
+  {
+    "id": "orc",
+    "hp": {"min": 10, "max": 20, "type": "normal"},
+    "attack": "1d10+2"
+  },
+  {
+    "id": "troll",
+    "hp": {"min": 20, "max": 60, "type": "normal", "skew": 1},
+    "attack": "3d6-1"
+  },
+  {
+    "id": "big_boss",
+    "hp": 80,
+    "attack": {"min": 5, "max": 25, "stddev": 3, "type": "normal", "skew": 0.5}
+  }
+]

@@ -1,0 +1,75 @@
+<html>
+    <head>
+        <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+        <script src="./js/gamerng.js"></script>
+        <script src="playground.js"></script>
+        <style>
+            body {
+                padding: 0;
+                font-family: Aptos, Segoe UI, Helvetica, Arial, Verdana, sans-serif;
+            }
+
+            .app {
+                max-width: 1600px;
+            }
+
+            #graph-container {
+                display: flex;
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            #controls {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            input, textarea, button {
+                padding: 0.5rem 0.5rem;
+            }
+
+            #run {
+                color: white;
+                background: #cc3311;
+                font-weight: bold;
+                cursor: pointer;
+                border: none;
+            }
+
+            #input {
+                font-family: monospace;
+            }
+
+            #error {
+                color: #500;
+                background-color: rgba(255,0,0,0.1);
+                padding: 1rem;
+                display: none;
+            }
+
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Chancy Playground</h1>
+            <p>Input your object for passing to chancy below, and then hit run to graph the results.</p>
+        </header>
+        <main class="app">
+            <div id="controls">
+                <input id="samples" type="number" min=1 step=1 value=100000 required>
+                <textarea id="input" required rows=10>[{
+  type: "normal",
+}, {
+  type: "laplace",
+}]</textarea>
+                <button id="run">Run</button>
+            </div>
+            <div id="info"></div>
+            <div id="error"></div>
+            <div id="graph-container"></div>
+        </main>
+        <footer>
+            &copy; 2024 Harry Mustoe-Playfair
+        </footer>
+    </body>
+</html>
