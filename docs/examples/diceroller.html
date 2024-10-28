@@ -1,0 +1,82 @@
+<html>
+    <head>
+        <script src="./../js/gamerng.js"></script>
+        <script src="diceroller.js"></script>
+        <style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, Aptos, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+                padding: 0;
+            }
+
+            .app {
+                max-width: 1600px;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            button {
+                border: none;
+                padding: 0.5rem 1rem;
+                cursor: pointer;
+            }
+
+            #button-container {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            #roll {
+                background: rgba(220, 240, 255, 1);
+                outline: 2px solid rgba(180, 200, 235, 1);
+                font-weight: bold;
+                color: rgba(20, 23, 25, 1);
+            }
+
+            #roll:disabled {
+                cursor: not-allowed;
+            }
+
+            #finish {
+                background: rgba(220, 240, 255, 1);
+                outline: 2px solid rgba(180, 200, 235, 1);
+                font-weight: bold;
+                color: rgba(20, 23, 25, 1);
+            }
+
+            #current-roll .die {
+                cursor: pointer;
+            }
+
+            .die.kept {
+                color: rgba(0,0,0,0.1);
+            }
+
+            #bank, #current-roll {
+                font-size: 4rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="app">
+            <div id="description">
+                <p>Roll, and then click on dice to choose dice to keep. Try and get the high score.</p>
+                <p>Check the <a href="https://github.com/manticorp/gamerng/blob/main/docs/examples/diceroller.js">source code</a> for more information.</p>
+            </div>
+            <div id="button-container">
+                <button id="roll">Roll the dice 🎲 [<span id="rollsleft">3</span> remaining]</button>
+                <button id="finish" style="display: none">Finish & Restart</button>
+            </div>
+            <div id="output-container">
+                <h3>Your Score: <span id="score">0</span></h3>
+                <h3>Current High Score: <span id="high-score">0</span></h3>
+                <h3>Current Roll</h3>
+                <div id="current-roll">
+                </div>
+                <h3>Your Bank:</h3>
+                <div id="bank">
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
