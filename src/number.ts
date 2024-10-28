@@ -451,14 +451,13 @@ function validate (number?: number[]) : ArrayNumberValidator;
 function validate (number?: number | number[] | Record<string, number> | Record<string, number[]>) {
   if (Array.isArray(number)) {
     return new ArrayNumberValidator(number);
-  } else if (typeof number === 'object') {
-    const name = Object.keys(number)[0];
-    const value = number[name];
-    if (Array.isArray(value)) {
-      return validate(value).varname(name);
-    } else {
-      return validate(value).varname(name);
+  } else if (typeof number === 'object' && number !== null) {
+    const entries = Object.entries(number);
+    if (entries.length === 0) {
+      throw new Error('Empty object provided');
     }
+    const [name, value] = entries[0];
+    return validate(value).varname(name);
   } else {
     return new NumberValidator(number);
   }
