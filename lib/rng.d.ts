@@ -51,14 +51,26 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
     protected abstract _next(): number;
     percentage(): number;
     probability(): number;
-    random(from?: number, to?: number, skew?: number): number;
+    random(from?: number | {
+        from?: number;
+        to?: number;
+        skew?: number;
+    }, to?: number, skew?: number): number;
     chance(n: number, chanceIn?: number): boolean;
     chanceTo(from: number, to: number): boolean;
-    randInt(from?: number, to?: number, skew?: number): number;
+    randInt(from?: number | {
+        from?: number;
+        to?: number;
+        skew?: number;
+    }, to?: number, skew?: number): number;
     uniqid(prefix?: string): string;
     static uniqid(prefix?: string): string;
     randomString(len?: number): string;
-    randBetween(from?: number, to?: number, skew?: number): number;
+    randBetween(from?: number | {
+        from?: number;
+        to?: number;
+        skew?: number;
+    }, to?: number, skew?: number): number;
     scale(number: number, from: number, to: number, min?: number, max?: number): number;
     scaleNorm(number: number, from: number, to: number): number;
     shouldThrowOnMaxRecursionsReached(): boolean;
@@ -220,7 +232,7 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
      * @group Result Prediction
      */
     static chancyMax(input: Chancy): number;
-    choice(data: Array<any>): any;
+    choice<T>(array: T[]): T | null;
     weights(data: Array<any>): Map<any, number>;
     weightedChoice(data: Record<any, number> | Array<any> | Map<any, number>): any;
     pool<T>(entries?: T[]): Pool<T>;
@@ -264,6 +276,7 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
     parseDiceString(string: string): DiceInterface;
     clamp(number: number, lower?: number, upper?: number): number;
     bin(val: number, bins: number, min: number, max: number): number;
+    shuffle<T>(array: T[]): T[];
 }
 /**
  * @category Main Class

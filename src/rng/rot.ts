@@ -47,18 +47,7 @@ export default class RotRng extends Rng implements RotRngInterface {
   }
 
   getItem<T> (array: Array<T>) {
-    if (!array.length) { return null; }
-    return array[Math.floor(this.getUniform() * array.length)];
-  }
-
-  shuffle<T>(array: Array<T>) {
-    const result = [];
-    const clone = array.slice();
-    while (clone.length) {
-      const index = clone.indexOf(this.getItem(clone) as T);
-      result.push(clone.splice(index, 1)[0]);
-    }
-    return result;
+    return this.choice(array);
   }
 
   getWeightedValue (data: { [key: string]: number, [key: number]: number }) {

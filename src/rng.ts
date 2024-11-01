@@ -246,7 +246,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     return this.randBetween(0, 1);
   }
 
-  public random (from: number = 0, to: number = 1, skew: number = 0): number {
+  public random (from: number | { from?: number, to?: number, skew?: number } = 0, to: number = 1, skew: number = 0): number {
     return this.randBetween(from, to, skew);
   }
 
@@ -263,7 +263,10 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     return this.chance(from, from + to);
   }
 
-  public randInt (from: number = 0, to: number = 1, skew: number = 0): number {
+  public randInt (from: number | { from?: number, to?: number, skew?: number } = 0, to: number = 1, skew: number = 0): number {
+    if (typeof from === 'object') {
+      ({ from = 0, to = 1, skew = 0 } = from);
+    }
     validate({ from }).int();
     validate({ to }).int();
 
@@ -301,7 +304,10 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     return str.join('');
   }
 
-  public randBetween (from: number = 0, to?: number, skew: number = 0): number {
+  public randBetween (from: number | { from?: number, to?: number, skew?: number } = 0, to?: number, skew: number = 0): number {
+    if (typeof from === 'object') {
+      ({ from = 0, to, skew = 0 } = from);
+    }
     if (typeof to === 'undefined') {
       to = from + 1;
     }
@@ -1182,8 +1188,11 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     throw new Error('Invalid input supplied to chancyMax');
   }
 
-  public choice (data: Array<any>): any {
-    return this.weightedChoice(data);
+  public choice<T>(array: T[]): T | null {
+    if (array.length <= 0) {
+      return null;
+    }
+    return array[this.randInt(0, array.length - 1)];
   }
 
   public weights (data: Array<any>): Map<any, number> {
@@ -1426,6 +1435,17 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     const spread = max - min;
     return (Math.round(((val - min) / spread) * (bins - 1)) / (bins - 1) * spread) + min;
   }
+
+  public shuffle<T>(array : T[]): T[] {
+    const newArray = [...array]; // Copy the array
+
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(this.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]]; // Swap elements
+    }
+
+    return newArray;
+  }
 }
 
 /**
@@ -1496,18 +1516,11 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
       },
 
       getItem<T> (array: Array<T>) {
-        if (!array.length) { return null; }
-        return array[Math.floor(this.getUniform() * array.length)];
+        return rng.choice(array);
       },
 
       shuffle<T>(array: Array<T>) {
-        const result = [];
-        const clone = array.slice();
-        while (clone.length) {
-          const index = clone.indexOf(this.getItem(clone) as T);
-          result.push(clone.splice(index, 1)[0]);
-        }
-        return result;
+        return rng.shuffle(array);
       },
 
       getWeightedValue (data: { [key: string]: number, [key: number]: number }) {

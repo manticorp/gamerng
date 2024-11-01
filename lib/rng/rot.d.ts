@@ -25,7 +25,6 @@ export default class RotRng extends Rng implements RotRngInterface {
     getNormal(mean?: number, stddev?: number): number;
     getPercentage(): number;
     getItem<T>(array: Array<T>): T | null;
-    shuffle<T>(array: Array<T>): T[];
     getWeightedValue(data: {
         [key: string]: number;
         [key: number]: number;

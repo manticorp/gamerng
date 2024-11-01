@@ -8,7 +8,47 @@ This is a random number generator that is:
 ⚡flexible input (Chancy!!)  
 ⌨️ written in TypeScript
 
-And more!
+And more! It has been designed with **🤸‍♂️ extreme flexibility 🤸‍♂️** in mind
+
+This library is capable of generating:
+
+* Uniform random numbers ```rng.random()```
+* Normal random numbers ```rng.normal({ mean: 50, stddev: 10 })```
+* Random integers ```rng.randInt()```
+* Random uniform/normal numbers/integers in a range ```rng.random(5, 10)```
+* Biased random numbers ```rng.random({ skew: -1 })```
+* Random numbers from the following distributions:
+  * Irwin-Hall
+  * Bates
+  * Bates Gaussian
+  * Bernoulli
+  * Exponential
+  * Pareto
+  * Poisson
+  * Hypergeometric
+  * Rademacher
+  * Binomial
+  * Beta-Binomial
+  * Beta
+  * Gamma
+  * Wigner Semicircle
+  * Kumaraswamy
+  * Hermite
+  * Chi-Squared
+  * Rayleigh
+  * Log-Normal
+  * Cauchy
+  * Laplace
+  * Logistic
+
+It's also able to:
+
+* Roll dice ```rng.dice('2d6+7')```
+* Pick random items from a list ```rng.choice(['a', 5, (a) => 'foo'])```
+* Pick random items from a weighted/biased list ```rng.weightedChoice({a: 1, b: 2, c: 3})```
+* Shuffle arrays ```rng.shuffle(['a', 'b', 'c'])```
+* Be called flexibly from a single function ```rng.chancy({min: 5, max: 10}) / rng.chancy('4d10-1')```
+* Give you min/max possible results from function calls ```rng.diceMin/diceMax``` and ```rng.chancyMin/chancyMax```
 
 # Installation
 

@@ -122,6 +122,10 @@ describe('testing Rng & predictable Rng', () => {
     expect(p2.sameAs(p1)).toBeTruthy();
   });
 
+  test('random returns a number', () => {
+    expect(rng.random()).toEqual(expect.any(Number));
+  });
+
   test('rng with seed set from another RNG should test the same', () => {
     const p1 = new Rng('abc_123');
     const p2 = new Rng();
@@ -301,11 +305,22 @@ describe('testing Rng & predictable Rng', () => {
       expect(randomNumber).toBeGreaterThanOrEqual(1);
       expect(randomNumber).toBeLessThanOrEqual(10);
     }
+    for (let i = 0; i < smruns; i++) {
+      const randomNumber = rng.random({ from: 1, to: 10 });
+      expect(randomNumber).toBeGreaterThanOrEqual(1);
+      expect(randomNumber).toBeLessThanOrEqual(10);
+    }
   });
 
   test('Random int returns int within range', () => {
     for (let i = 0; i < smruns; i++) {
       const randResult = rng.randInt(0, 100);
+      expect(randResult).toBeGreaterThanOrEqual(0);
+      expect(randResult).toBeLessThanOrEqual(100);
+      expect(Number.isInteger(randResult)).toBeTruthy();
+    }
+    for (let i = 0; i < smruns; i++) {
+      const randResult = rng.randInt({ from: 0, to: 100 });
       expect(randResult).toBeGreaterThanOrEqual(0);
       expect(randResult).toBeLessThanOrEqual(100);
       expect(Number.isInteger(randResult)).toBeTruthy();
@@ -325,6 +340,33 @@ describe('testing Rng & predictable Rng', () => {
       expect(r).toBeGreaterThanOrEqual(0);
       expect(r).toBeLessThanOrEqual(1);
     }
+  });
+
+  test('random and randInt with just skew', () => {
+    let sum = 0;
+    let sumInt = 0;
+    for (let i = 0; i < mdruns; i++) {
+      const r = rng.random({ skew: -1 });
+      expect(r).toEqual(expect.any(Number));
+      sum += r;
+
+      const r2 = rng.randInt({ skew: -1 });
+      expect(r2).toEqual(expect.any(Number));
+      sumInt += r2;
+    }
+    expect(sum / mdruns).toBeLessThan(0.5);
+    expect(sumInt / mdruns).toBeLessThan(0.5);
+  });
+
+  test('random with big skews really skew', () => {
+    let sumleft = 0;
+    let sumright = 0;
+    for (let i = 0; i < mdruns; i++) {
+      sumleft += rng.random({ skew: -3 });
+      sumright += rng.random({ skew: 3 });
+    }
+    expect(sumleft / mdruns).toBeLessThan(0.2);
+    expect(sumright / mdruns).toBeGreaterThan(0.8);
   });
 
   test('Random int with skew', () => {
@@ -928,5 +970,22 @@ describe('testing Rng & predictable Rng', () => {
   test('should handle pool of elements', () => {
     const pool = rng.pool([1, 2, 3, 4, 5]);
     expect(pool).toEqual(expect.any(Pool));
+  });
+
+  test('shuffle should contain all elements of original', () => {
+    const arr = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+    const rngResult = rng.shuffle(arr);
+    expect(rngResult).not.toEqual(arr);
+    expect(rngResult.sort()).toEqual(arr.sort());
+  });
+
+  test('shuffled arrays should be the same from the same seeded rng', () => {
+    const arr = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'];
+    const rng1 = new Rng('my_seed');
+    const rng2 = new Rng('my_seed');
+    const rngResult1 = rng1.shuffle(arr);
+    const rngResult2 = rng2.shuffle(arr);
+    expect(rngResult1).toEqual(rngResult2);
+    expect(rngResult1.sort()).toEqual(rngResult2.sort());
   });
 });

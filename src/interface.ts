@@ -539,7 +539,7 @@ export interface RngInterface {
    * @param data The values to choose from
    * @return The random choice from the array
    */
-  choice (data: Array<any>): any;
+  choice<T>(array: T[]): T | null;
 
   /**
    * Given an array, gives a key:weight Map of entries in the array based
@@ -854,6 +854,14 @@ export interface RngInterface {
    * @group Serialization
    */
   serialize (): any;
+
+  /**
+   * Shuffle a given array using the in build RNG
+   *
+   * @group Utilities
+   * @returns the shuffled array.
+   */
+  shuffle<T>(array : T[]): T[];
 }
 
 /**

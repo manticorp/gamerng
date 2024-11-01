@@ -590,7 +590,7 @@ var GameRng = (function () {
       }
     }
 
-    const CURRENT_VERSION = "0.2.1";
+    const CURRENT_VERSION = "0.2.3";
 
     // Thank you https://semver.org/
     const semverregex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
@@ -1034,6 +1034,13 @@ var GameRng = (function () {
         return this.chance(from, from + to);
       }
       randInt(from = 0, to = 1, skew = 0) {
+        if (typeof from === 'object') {
+          ({
+            from = 0,
+            to = 1,
+            skew = 0
+          } = from);
+        }
         validate({
           from
         }).int();
@@ -1071,6 +1078,13 @@ var GameRng = (function () {
         return str.join('');
       }
       randBetween(from = 0, to, skew = 0) {
+        if (typeof from === 'object') {
+          ({
+            from = 0,
+            to,
+            skew = 0
+          } = from);
+        }
         if (typeof to === 'undefined') {
           to = from + 1;
         }
@@ -2044,8 +2058,11 @@ var GameRng = (function () {
         }
         throw new Error('Invalid input supplied to chancyMax');
       }
-      choice(data) {
-        return this.weightedChoice(data);
+      choice(array) {
+        if (array.length <= 0) {
+          return null;
+        }
+        return array[this.randInt(0, array.length - 1)];
       }
       weights(data) {
         const chances = new Map();
@@ -2314,6 +2331,14 @@ var GameRng = (function () {
         const spread = max - min;
         return Math.round((val - min) / spread * (bins - 1)) / (bins - 1) * spread + min;
       }
+      shuffle(array) {
+        const newArray = [...array]; // Copy the array
+        for (let i = newArray.length - 1; i > 0; i--) {
+          const j = Math.floor(this.random() * (i + 1));
+          [newArray[i], newArray[j]] = [newArray[j], newArray[i]]; // Swap elements
+        }
+        return newArray;
+      }
     }
     _RngAbstract_seed = new WeakMap(), _RngAbstract_randFunc = new WeakMap(), _RngAbstract_shouldThrowOnMaxRecursionsReached = new WeakMap(), _RngAbstract_distributions = new WeakMap();
     RngAbstract.version = CURRENT_VERSION;
@@ -2378,19 +2403,10 @@ var GameRng = (function () {
             return 1 + Math.floor(this.getUniform() * 100);
           },
           getItem(array) {
-            if (!array.length) {
-              return null;
-            }
-            return array[Math.floor(this.getUniform() * array.length)];
+            return rng.choice(array);
           },
           shuffle(array) {
-            const result = [];
-            const clone = array.slice();
-            while (clone.length) {
-              const index = clone.indexOf(this.getItem(clone));
-              result.push(clone.splice(index, 1)[0]);
-            }
-            return result;
+            return rng.shuffle(array);
           },
           getWeightedValue(data) {
             return rng.weightedChoice(data);
