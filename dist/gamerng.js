@@ -590,7 +590,7 @@ var GameRng = (function () {
       }
     }
 
-    const CURRENT_VERSION = "0.2.0";
+    const CURRENT_VERSION = "0.2.1";
 
     // Thank you https://semver.org/
     const semverregex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
@@ -2316,6 +2316,7 @@ var GameRng = (function () {
       }
     }
     _RngAbstract_seed = new WeakMap(), _RngAbstract_randFunc = new WeakMap(), _RngAbstract_shouldThrowOnMaxRecursionsReached = new WeakMap(), _RngAbstract_distributions = new WeakMap();
+    RngAbstract.version = CURRENT_VERSION;
     /**
      * @category Main Class
      */

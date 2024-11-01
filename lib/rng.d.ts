@@ -20,6 +20,7 @@ export declare class NonRandomRandomError extends Error {
 export declare abstract class RngAbstract implements RngInterface, RngDistributionsInterface {
     #private;
     version: string;
+    static version: string;
     constructor(seed?: Seed);
     getSeed(): number;
     sameAs(other: RngInterface): boolean;

@@ -88,6 +88,7 @@ function isNumeric (input: any) {
  */
 export abstract class RngAbstract implements RngInterface, RngDistributionsInterface {
   version: string = CURRENT_VERSION;
+  static version: string = CURRENT_VERSION;
   #seed: number = 0;
   #randFunc?: Randfunc | null;
   #shouldThrowOnMaxRecursionsReached?: boolean;
