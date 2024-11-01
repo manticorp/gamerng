@@ -19,6 +19,12 @@ Run ```npm install @manticorp/ultraloot``` or include the dist file in browser.
 Download release and include ultraloot in browser:
 
 ```html
+<script src="https://unpkg.com/@manticorp/gamerng@latest/dist/gamerng.min.js"></script>
+<!-- or -->
+<script src="https://cdn.jsdelivr.net/npm/@manticorp/gamerng/dist/gamerng.min.js"></script>
+<!-- or -->
+<script src="https://cdn.jsdelivr.net/gh/manticorp/gamerng@latest/dist/gamerng.min.js"></script>
+<! -- or -- >
 <script src="dist/gamerng.js"></script>
 <script>
   const rng = new GameRng();
