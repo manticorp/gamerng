@@ -1,4 +1,4 @@
-import Pool from './pool';
+import Pool from './pool.js';
 
 export interface DiceInterface {
   n: number;
@@ -559,16 +559,10 @@ export interface RngInterface {
   weights (data: Array<any>): Map<any, number>;
 
   /**
-   * Takes a random choice from an array of values, with equal weight.
-   *
-   * @group Choices
-   * @param data The values to choose from
-   * @return The random choice from the array
-   */
-  weightedChoice (data: Array<any>): any;
-
-  /**
    * Takes a random key from an object with a key:number pattern
+   *
+   * Using a Map allows objects to be specified as keys, can be useful for
+   * choosing between concrete objects.
    *
    * @example
    *
@@ -587,18 +581,6 @@ export interface RngInterface {
    *   d: 4
    * });
    * ```
-   *
-   * @group Choices
-   * @param data The values to choose from
-   * @return The random choice from the array
-   */
-  weightedChoice (data: Record<any, number>): any;
-
-  /**
-   * Takes a random key from a JS Map object with a key:number pattern.
-   *
-   * Using a Map allows objects to be specified as keys, can be useful for
-   * choosing between concrete objects.
    *
    * @example
    *
@@ -621,13 +603,13 @@ export interface RngInterface {
    * rng.weightedChoice(choices);
    * ```
    *
+   * @group Choices
    * @see [Map Object - MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)
    * @see [Map Object - w3schools](https://www.w3schools.com/js/js_maps.asp)
-   * @group Choices
-   * @param data The values to choose from, in the form of a Map
+   * @param data The values to choose from
    * @return The random choice from the array
    */
-  weightedChoice (data: Map<any, number>): any;
+  weightedChoice (data: Record<any, number> | Array<any> | Map<any, number>): any;
 
   /**
    * Returns a Pool with the given entries based on this RNG.

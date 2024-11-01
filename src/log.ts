@@ -17,6 +17,7 @@ if (typeof PRODUCTION !== 'undefined') {
 const verbose = true;
 const ultraverbose = true;
 
+// @ts-ignore
 const voidFunc = (...args: any): void => {};
 let r = {
   debug: voidFunc,

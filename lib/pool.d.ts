@@ -1,4 +1,4 @@
-import { RngInterface } from './interface';
+import { RngInterface } from './interface.js';
 /**
  * @category Pool
  */

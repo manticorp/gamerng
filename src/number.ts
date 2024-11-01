@@ -1,3 +1,5 @@
+import { isNumeric } from './utils.js';
+
 /**
  * @category Number Validator
  */
@@ -6,6 +8,8 @@ const assert = (truthy : boolean, msg : string = 'Assertion failed') => {
     throw new NumberValidationError(msg);
   }
 };
+
+type validateable = number;
 
 /**
  * @category Number Validator
@@ -19,23 +23,23 @@ export class ArrayNumberValidator {
   /**
    * The numbers to be validated
    */
-  #numbers: number[] = [];
+  #numbers: validateable[] = [];
 
   /**
    * Descriptive name for this validation
    */
   name: string = 'numbers';
 
-  constructor (numbers : number[], name = 'numbers') {
+  constructor (numbers : validateable[], name = 'numbers') {
     this.numbers = numbers;
     this.name = name;
   }
 
-  get numbers () : number[] {
+  get numbers () : validateable[] {
     return this.#numbers;
   }
 
-  set numbers (numbers: number[]) {
+  set numbers (numbers: validateable[]) {
     for (const number of numbers) {
       assert(typeof number === 'number', `Non-number passed to validator ${number}`);
     }
@@ -45,7 +49,7 @@ export class ArrayNumberValidator {
   /**
    * Specify the numbers to validate
    */
-  all (numbers: number[]): this {
+  all (numbers: validateable[]): this {
     this.numbers = numbers;
     return this;
   }
@@ -53,7 +57,7 @@ export class ArrayNumberValidator {
   /**
    * Specify the numbers to validate
    */
-  validate (numbers : number | number[]) {
+  validate (numbers : validateable | number[]) {
     if (!Array.isArray(numbers)) {
       return new NumberValidator(numbers);
     }
@@ -77,7 +81,7 @@ export class ArrayNumberValidator {
   /**
    * Get the sum of our numbers
    */
-  sum (): number {
+  sum (): validateable {
     return this.numbers.reduce((a, b) => a + b, 0);
   }
 
@@ -88,7 +92,7 @@ export class ArrayNumberValidator {
    * @param msg Error message
    * @throws {@link NumberValidationError} If they do not sum close to the correct amount
    */
-  sumcloseto (sum: number, diff : number = 0.0001, msg?: string): this {
+  sumcloseto (sum: validateable, diff : validateable = 0.0001, msg?: string): this {
     assert(Math.abs(this.sum() - sum) < diff, msg ?? `Expected sum of ${this.name} to be within ${diff} of ${sum}, got ${this.sum()}`);
     return this;
   }
@@ -99,7 +103,7 @@ export class ArrayNumberValidator {
    * @param msg Error message
    * @throws {@link NumberValidationError} If they do not total to the correct amount
    */
-  sumto (sum : number, msg?: string): this {
+  sumto (sum : validateable, msg?: string): this {
     assert(this.sum() === sum, msg ?? `Expected sum of ${this.name} to be equal to ${sum}, got ${this.sum()}`);
     return this;
   }
@@ -110,7 +114,7 @@ export class ArrayNumberValidator {
    * @param msg Error message
    * @throws {@link NumberValidationError} If they do not total to < sum
    */
-  sumtolt (sum : number, msg?: string): this {
+  sumtolt (sum : validateable, msg?: string): this {
     assert(this.sum() < sum, msg ?? `Expected sum of ${this.name} to be less than ${sum}, got ${this.sum()}`);
     return this;
   }
@@ -121,7 +125,7 @@ export class ArrayNumberValidator {
    * @param msg Error message
    * @throws {@link NumberValidationError} If they do not total to > sum
    */
-  sumtogt (sum : number, msg?: string): this {
+  sumtogt (sum : validateable, msg?: string): this {
     assert(this.sum() > sum, msg ?? `Expected sum of ${this.name} to be greater than ${sum}, got ${this.sum()}`);
     return this;
   }
@@ -132,7 +136,7 @@ export class ArrayNumberValidator {
    * @param msg Error message
    * @throws {@link NumberValidationError} If they do not total to <= sum
    */
-  sumtolteq (sum : number, msg?: string): this {
+  sumtolteq (sum : validateable, msg?: string): this {
     assert(this.sum() <= sum, msg ?? `Expected sum of ${this.name} to be less than or equal to ${sum}, got ${this.sum()}`);
     return this;
   }
@@ -143,7 +147,7 @@ export class ArrayNumberValidator {
    * @param msg Error message
    * @throws {@link NumberValidationError} If they do not total to >= sum
    */
-  sumtogteq (sum : number, msg?: string): this {
+  sumtogteq (sum : validateable, msg?: string): this {
     assert(this.sum() >= sum, msg ?? `Expected sum of ${this.name} to be greater than or equal to ${sum}, got ${this.sum()}`);
     return this;
   }
@@ -175,7 +179,7 @@ export class ArrayNumberValidator {
   /**
    * @throws {@link NumberValidationError} if numbers are not all between from and to
    */
-  between (from: number, to: number, msg?: string): this {
+  between (from: validateable, to: validateable, msg?: string): this {
     this.numbers.forEach(a => validate(a).between(from, to, msg ?? `Expected every component of ${this.name} to be between ${from} and ${to}, got ${a}`));
     return this;
   }
@@ -183,7 +187,7 @@ export class ArrayNumberValidator {
   /**
    * @throws {@link NumberValidationError} if numbers are not all between or equal to from and to
    */
-  betweenEq (from: number, to: number, msg?: string): this {
+  betweenEq (from: validateable, to: validateable, msg?: string): this {
     this.numbers.forEach(a => validate(a).betweenEq(from, to, msg ?? `Expected every component of ${this.name} to be between or equal to ${from} and ${to}, got ${a}`));
     return this;
   }
@@ -191,7 +195,7 @@ export class ArrayNumberValidator {
   /**
    * @throws {@link NumberValidationError} if numbers are not all > n
    */
-  gt (n : number, msg?: string): this {
+  gt (n : validateable, msg?: string): this {
     this.numbers.forEach(a => validate(a).gt(n, msg ?? `Expected every component of ${this.name} to be > ${n}, got ${a}`));
     return this;
   }
@@ -199,7 +203,7 @@ export class ArrayNumberValidator {
   /**
    * @throws {@link NumberValidationError} if numbers are not all >= n
    */
-  gteq (n : number, msg?: string): this {
+  gteq (n : validateable, msg?: string): this {
     this.numbers.forEach(a => validate(a).gteq(n, msg ?? `Expected every component of ${this.name} to be >= ${n}, got ${a}`));
     return this;
   }
@@ -207,7 +211,7 @@ export class ArrayNumberValidator {
   /**
    * @throws {@link NumberValidationError} if numbers are not all < n
    */
-  lt (n : number, msg?: string): this {
+  lt (n : validateable, msg?: string): this {
     this.numbers.forEach(a => validate(a).lt(n, msg ?? `Expected every component of ${this.name} to be < ${n}, got ${a}`));
     return this;
   }
@@ -215,7 +219,7 @@ export class ArrayNumberValidator {
   /**
    * @throws {@link NumberValidationError} if numbers are not all <= n
    */
-  lteq (n : number, msg?: string): this {
+  lteq (n : validateable, msg?: string): this {
     this.numbers.forEach(a => validate(a).lteq(n, msg ?? `Expected every component of ${this.name} to be <= ${n}, got ${a}`));
     return this;
   }
@@ -242,36 +246,42 @@ export class NumberValidator {
   /**
    * The number being tested.
    */
-  #number?: number;
+  #number?: validateable;
 
   /**
    * The name of the variable being validated - shows up in error messages.
    */
   name: string = 'number';
 
-  constructor (number: number = 0, name = 'number') {
+  constructor (number: validateable | string = 0, name = 'number') {
+    if (typeof number === 'string') {
+      number = parseFloat(number);
+    }
     this.number = number;
     this.name = name;
   }
 
-  get number () : number | undefined {
+  get number () : validateable | undefined {
     return this.#number;
   }
 
-  set number (number: number | undefined) {
-    assert(typeof number === 'number', `Non-number passed to validator ${number}`);
+  set number (number: validateable | undefined) {
+    assert(isNumeric(number), `Non-number passed to validator ${number}`);
+    if (typeof number === 'string') {
+      number = parseFloat('number');
+    }
     this.#number = number;
   }
 
   /**
    * Returns an ArrayNumberValidator for all the numbers
    */
-  all (numbers: number[], name?: string): ArrayNumberValidator {
+  all (numbers: validateable[], name?: string): ArrayNumberValidator {
     return new ArrayNumberValidator(numbers, name ?? this.name);
   }
 
-  assertNumber (num?: number) : num is number {
-    assert(typeof this.number !== 'undefined', 'No number passed to validator.');
+  assertNumber (num?: validateable) : num is number {
+    assert(typeof num !== 'undefined', 'No number passed to validator.');
     return true;
   }
 
@@ -293,12 +303,16 @@ export class NumberValidator {
   /**
    * Specify the number to be validated
    */
-  validate (number : number | number[]) {
+  validate (number : validateable | number[]) {
     if (Array.isArray(number)) {
       return this.all(number);
     }
     this.number = number;
     return this;
+  }
+
+  integer (msg?: string): this {
+    return this.int(msg);
   }
 
   /**
@@ -330,7 +344,7 @@ export class NumberValidator {
    * Asserts that the from < number < to
    * @throws {@link NumberValidationError} if it is outside or equal to those bounds
    */
-  between (from: number, to: number, msg?: string) {
+  between (from: validateable, to: validateable, msg?: string) {
     if (this.assertNumber(this.number)) assert(this.number > from && this.number < to, msg ?? `Expected ${this.name} to be between ${from} and ${to}, got ${this.number}`);
     return this;
   }
@@ -339,7 +353,7 @@ export class NumberValidator {
    * Asserts that the from <= number <= to
    * @throws {@link NumberValidationError} if it is outside those bounds
    */
-  betweenEq (from: number, to: number, msg?: string) {
+  betweenEq (from: validateable, to: validateable, msg?: string) {
     if (this.assertNumber(this.number)) assert(this.number >= from && this.number <= to, msg ?? `Expected ${this.name} to be between or equal to ${from} and ${to}, got ${this.number}`);
     return this;
   }
@@ -348,7 +362,7 @@ export class NumberValidator {
    * Asserts that number > n
    * @throws {@link NumberValidationError} if it is less than or equal to n
    */
-  gt (n : number, msg?: string): this {
+  gt (n : validateable, msg?: string): this {
     if (this.assertNumber(this.number)) assert(this.number > n, msg ?? `Expected ${this.name} to be greater than ${n}, got ${this.number}`);
     return this;
   }
@@ -357,7 +371,7 @@ export class NumberValidator {
    * Asserts that number >= n
    * @throws {@link NumberValidationError} if it is less than n
    */
-  gteq (n : number, msg?: string): this {
+  gteq (n : validateable, msg?: string): this {
     if (this.assertNumber(this.number)) assert(this.number >= n, msg ?? `Expected ${this.name} to be greater than or equal to ${n}, got ${this.number}`);
     return this;
   }
@@ -366,7 +380,7 @@ export class NumberValidator {
    * Asserts that number < n
    * @throws {@link NumberValidationError} if it is greater than or equal to n
    */
-  lt (n : number, msg?: string): this {
+  lt (n : validateable, msg?: string): this {
     if (this.assertNumber(this.number)) assert(this.number < n, msg ?? `Expected ${this.name} to be less than ${n}, got ${this.number}`);
     return this;
   }
@@ -375,7 +389,7 @@ export class NumberValidator {
    * Asserts that number <= n
    * @throws {@link NumberValidationError} if it is greater than n
    */
-  lteq (n : number, msg?: string): this {
+  lteq (n : validateable, msg?: string): this {
     if (this.assertNumber(this.number)) assert(this.number <= n, msg ?? `Expected ${this.name} to be less than or equal to ${n}, got ${this.number}`);
     return this;
   }
@@ -442,16 +456,15 @@ export class NumberValidator {
  *
  * @see {@link NumberValidator}
  * @see {@link ArrayNumberValidator}
- * @param {number | number[]} number [description]
  */
-function validate (number?: Record<string, number>) : NumberValidator;
-function validate (number?: Record<string, number[]>) : ArrayNumberValidator;
-function validate (number?: number) : NumberValidator;
-function validate (number?: number[]) : ArrayNumberValidator;
-function validate (number?: number | number[] | Record<string, number> | Record<string, number[]>) {
+function validate (number?: Record<string, validateable>) : NumberValidator;
+function validate (number?: Record<string, validateable[]>) : ArrayNumberValidator;
+function validate (number?: validateable) : NumberValidator;
+function validate (number?: validateable[]) : ArrayNumberValidator;
+function validate (number?: validateable | validateable[] | Record<string, validateable> | Record<string, validateable[]>) {
   if (Array.isArray(number)) {
     return new ArrayNumberValidator(number);
-  } else if (typeof number === 'object' && number !== null) {
+  } else if (typeof number === 'object') {
     const entries = Object.entries(number);
     if (entries.length === 0) {
       throw new Error('Empty object provided');

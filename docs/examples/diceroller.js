@@ -18,6 +18,10 @@ class Yahtzee {
     return this.kept.reduce((a, b) => a + b, 0);
   }
 
+  get numdie () {
+    return 5 - this.kept.length;
+  }
+
   reset () {
     this.dice = Array(5).fill(0);
     this.kept = [];
@@ -25,7 +29,7 @@ class Yahtzee {
   }
 
   roll () {
-    const r = rng.diceExpanded({ n: 5 - this.kept.length, d: 6 });
+    const r = rng.diceExpanded({ n: this.numdie, d: 6 });
     this.rollsLeft--;
     return r.dice;
   }
@@ -77,6 +81,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshGame();
   };
 
+  let anim;
+  let lastframe = 0;
+  let animating = false;
+  const diceanim = () => {
+    const now = performance.now();
+    const elapsed = (now - lastframe) / 1000;
+    if (elapsed > (1 / 15)) {
+      const d = Array(game.numdie).fill(0).map(a => rng.dice(1, 6)).map(a => diceMap[a]).join('');
+      crContainer.classList.add('rolling');
+      crContainer.innerHTML = d;
+      lastframe = now;
+    }
+    if (animating) {
+      anim = requestAnimationFrame(diceanim);
+    }
+  };
+
   finish.addEventListener('click', finishGame);
 
   rollButton.addEventListener('click', () => {
@@ -84,29 +105,40 @@ document.addEventListener('DOMContentLoaded', async () => {
       finishGame();
     }
     if (game.rollsLeft > 0) {
-      crContainer.innerHTML = '';
       const r = game.roll();
 
-      r.forEach(a => {
-        const d = document.createElement('span');
-        d.dataset.number = a;
-        d.dataset.kept = false;
-        d.classList.add('die');
-        d.innerText = diceMap[a];
-        d.onclick = () => {
-          if (JSON.parse(d.dataset.kept)) {
-            game.unkeep(a);
-            d.classList.remove('kept');
-            d.dataset.kept = false;
-          } else {
-            game.keep(a);
-            d.classList.add('kept');
-            d.dataset.kept = true;
+      animating = true;
+      anim = requestAnimationFrame(diceanim);
+
+      setTimeout(() => {
+        crContainer.classList.remove('rolling');
+        animating = false;
+        cancelAnimationFrame(anim);
+        crContainer.innerHTML = '';
+        r.forEach(a => {
+          const d = document.createElement('span');
+          d.dataset.number = a;
+          d.dataset.kept = false;
+          d.classList.add('die');
+          d.innerText = diceMap[a];
+          d.onclick = () => {
+            if (JSON.parse(d.dataset.kept)) {
+              game.unkeep(a);
+              d.classList.remove('kept');
+              d.dataset.kept = false;
+            } else {
+              game.keep(a);
+              d.classList.add('kept');
+              d.dataset.kept = true;
+            }
+            refreshGame();
+          };
+          crContainer.appendChild(d);
+          if (game.rollsLeft === 0) {
+            d.click();
           }
-          refreshGame();
-        };
-        crContainer.appendChild(d);
-      });
+        });
+      }, 1000);
     } else {
       alert('No rolls left, please choose your remaining dice!');
     }

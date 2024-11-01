@@ -1,3 +1,4 @@
+type validateable = number;
 /**
  * @category Number Validator
  */
@@ -12,17 +13,17 @@ export declare class ArrayNumberValidator {
      * Descriptive name for this validation
      */
     name: string;
-    constructor(numbers: number[], name?: string);
-    get numbers(): number[];
-    set numbers(numbers: number[]);
+    constructor(numbers: validateable[], name?: string);
+    get numbers(): validateable[];
+    set numbers(numbers: validateable[]);
     /**
      * Specify the numbers to validate
      */
-    all(numbers: number[]): this;
+    all(numbers: validateable[]): this;
     /**
      * Specify the numbers to validate
      */
-    validate(numbers: number | number[]): this | NumberValidator;
+    validate(numbers: validateable | number[]): this | NumberValidator;
     /**
      * Pass a string decribing the varname to this to make the error messages
      * make more sense in your context.
@@ -36,7 +37,7 @@ export declare class ArrayNumberValidator {
     /**
      * Get the sum of our numbers
      */
-    sum(): number;
+    sum(): validateable;
     /**
      * Validates whether the total of all of our numbers is close to sum, with a maximum difference of diff
      * @param sum The sum
@@ -44,42 +45,42 @@ export declare class ArrayNumberValidator {
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not sum close to the correct amount
      */
-    sumcloseto(sum: number, diff?: number, msg?: string): this;
+    sumcloseto(sum: validateable, diff?: validateable, msg?: string): this;
     /**
      * Validates whether the total of all of our numbers is equal (===) to sum
      * @param sum The sum
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not total to the correct amount
      */
-    sumto(sum: number, msg?: string): this;
+    sumto(sum: validateable, msg?: string): this;
     /**
      * Validates whether the total of all of our numbers is < sum
      * @param sum The sum
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not total to < sum
      */
-    sumtolt(sum: number, msg?: string): this;
+    sumtolt(sum: validateable, msg?: string): this;
     /**
      * Validates whether the total of all of our numbers is > sum
      * @param sum The sum
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not total to > sum
      */
-    sumtogt(sum: number, msg?: string): this;
+    sumtogt(sum: validateable, msg?: string): this;
     /**
      * Validates whether the total of all of our numbers is <= sum
      * @param sum The sum
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not total to <= sum
      */
-    sumtolteq(sum: number, msg?: string): this;
+    sumtolteq(sum: validateable, msg?: string): this;
     /**
      * Validates whether the total of all of our numbers is >= sum
      * @param sum The sum
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not total to >= sum
      */
-    sumtogteq(sum: number, msg?: string): this;
+    sumtogteq(sum: validateable, msg?: string): this;
     /**
      * @throws {@link NumberValidationError} if numbers are not all integers
      */
@@ -95,27 +96,27 @@ export declare class ArrayNumberValidator {
     /**
      * @throws {@link NumberValidationError} if numbers are not all between from and to
      */
-    between(from: number, to: number, msg?: string): this;
+    between(from: validateable, to: validateable, msg?: string): this;
     /**
      * @throws {@link NumberValidationError} if numbers are not all between or equal to from and to
      */
-    betweenEq(from: number, to: number, msg?: string): this;
+    betweenEq(from: validateable, to: validateable, msg?: string): this;
     /**
      * @throws {@link NumberValidationError} if numbers are not all > n
      */
-    gt(n: number, msg?: string): this;
+    gt(n: validateable, msg?: string): this;
     /**
      * @throws {@link NumberValidationError} if numbers are not all >= n
      */
-    gteq(n: number, msg?: string): this;
+    gteq(n: validateable, msg?: string): this;
     /**
      * @throws {@link NumberValidationError} if numbers are not all < n
      */
-    lt(n: number, msg?: string): this;
+    lt(n: validateable, msg?: string): this;
     /**
      * @throws {@link NumberValidationError} if numbers are not all <= n
      */
-    lteq(n: number, msg?: string): this;
+    lteq(n: validateable, msg?: string): this;
 }
 /**
  * Validate numbers in a fluent fashion.
@@ -140,14 +141,14 @@ export declare class NumberValidator {
      * The name of the variable being validated - shows up in error messages.
      */
     name: string;
-    constructor(number?: number, name?: string);
-    get number(): number | undefined;
-    set number(number: number | undefined);
+    constructor(number?: validateable | string, name?: string);
+    get number(): validateable | undefined;
+    set number(number: validateable | undefined);
     /**
      * Returns an ArrayNumberValidator for all the numbers
      */
-    all(numbers: number[], name?: string): ArrayNumberValidator;
-    assertNumber(num?: number): num is number;
+    all(numbers: validateable[], name?: string): ArrayNumberValidator;
+    assertNumber(num?: validateable): num is number;
     /**
      * Pass a string decribing the varname to this to make the error messages
      * make more sense in your context.
@@ -162,7 +163,8 @@ export declare class NumberValidator {
     /**
      * Specify the number to be validated
      */
-    validate(number: number | number[]): ArrayNumberValidator | this;
+    validate(number: validateable | number[]): ArrayNumberValidator | this;
+    integer(msg?: string): this;
     /**
      * Asserts that the number is an integer
      * @throws {@link NumberValidationError} if ths number is not an integer
@@ -182,32 +184,32 @@ export declare class NumberValidator {
      * Asserts that the from < number < to
      * @throws {@link NumberValidationError} if it is outside or equal to those bounds
      */
-    between(from: number, to: number, msg?: string): this;
+    between(from: validateable, to: validateable, msg?: string): this;
     /**
      * Asserts that the from <= number <= to
      * @throws {@link NumberValidationError} if it is outside those bounds
      */
-    betweenEq(from: number, to: number, msg?: string): this;
+    betweenEq(from: validateable, to: validateable, msg?: string): this;
     /**
      * Asserts that number > n
      * @throws {@link NumberValidationError} if it is less than or equal to n
      */
-    gt(n: number, msg?: string): this;
+    gt(n: validateable, msg?: string): this;
     /**
      * Asserts that number >= n
      * @throws {@link NumberValidationError} if it is less than n
      */
-    gteq(n: number, msg?: string): this;
+    gteq(n: validateable, msg?: string): this;
     /**
      * Asserts that number < n
      * @throws {@link NumberValidationError} if it is greater than or equal to n
      */
-    lt(n: number, msg?: string): this;
+    lt(n: validateable, msg?: string): this;
     /**
      * Asserts that number <= n
      * @throws {@link NumberValidationError} if it is greater than n
      */
-    lteq(n: number, msg?: string): this;
+    lteq(n: validateable, msg?: string): this;
 }
 /**
  * Validates a number or an array of numbers, with a fluent interface.
@@ -270,10 +272,9 @@ export declare class NumberValidator {
  *
  * @see {@link NumberValidator}
  * @see {@link ArrayNumberValidator}
- * @param {number | number[]} number [description]
  */
-declare function validate(number?: Record<string, number>): NumberValidator;
-declare function validate(number?: Record<string, number[]>): ArrayNumberValidator;
-declare function validate(number?: number): NumberValidator;
-declare function validate(number?: number[]): ArrayNumberValidator;
+declare function validate(number?: Record<string, validateable>): NumberValidator;
+declare function validate(number?: Record<string, validateable[]>): ArrayNumberValidator;
+declare function validate(number?: validateable): NumberValidator;
+declare function validate(number?: validateable[]): ArrayNumberValidator;
 export default validate;

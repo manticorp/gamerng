@@ -3,7 +3,10 @@ const rng = new GameRng();
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.querySelector('#graph-container');
 
-  const samples = 100000;
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+
+  const samples = parseInt(urlParams.get('samples') ?? 20000);
 
   const xbins = {
     size: 0.005,
@@ -49,10 +52,24 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       name: 'random',
       argtype: 'params',
+      show: 'return (new GameRng.Rng()).random()',
       args: [
-        {},
+        null,
       ],
-      xbins,
+      fn: () => {
+        return (new GameRng()).random();
+      },
+      xaxis: { range: [0, 1] },
+      xbins: { start: 0, end: 1, size: 0.01 },
+    },
+    {
+      name: 'random',
+      argtype: 'params',
+      args: [
+        null,
+      ],
+      xaxis: { range: [0, 1] },
+      xbins: { start: 0, end: 1, size: 0.01 },
     },
     {
       name: 'random',
@@ -66,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { min: 1, max: 10, skew: 2 },
         { min: 1, max: 10, skew: 3 },
       ],
-      xbins: { min: 1, max: 10, size: 0.1 },
+      xbins: { start: 1, end: 10, size: 0.1 },
     },
     {
       name: 'randInt',
@@ -89,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         {},
       ],
       xaxis: { range: [-3, 3] },
-      xbins: { min: -3, max: 3, size: 0.05 },
+      xbins: { start: -3, end: 3, size: 0.05 },
     },
     {
       name: 'normal',
@@ -101,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { mean: 2 },
       ],
       xaxis: { range: [-3, 3] },
-      xbins: { min: -3, max: 3, size: 0.05 },
+      xbins: { start: -3, end: 3, size: 0.05 },
     },
     {
       name: 'normal',
@@ -113,10 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
       yaxis: { range: [0, samples / 20] },
       xaxis: { range: [-3, 3] },
-      xbins: { min: -3, max: 3, size: 0.01 },
+      xbins: { start: -3, end: 3, size: 0.01 },
     },
     {
       name: 'normal',
+      samples: 10000,
       defaultArgs: { min: -0.5, max: 0.5 },
       args: [
         { min: -0.5, max: 0.5, stddev: 0.01 },
@@ -126,10 +144,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
       yaxis: { range: [0, samples / 20] },
       xaxis: { range: [-3, 3] },
-      xbins: { min: -0.5, max: 0.5, size: 0.01 },
+      xbins: { start: -0.5, end: 0.5, size: 0.01 },
     },
     {
       name: 'normal',
+      samples: 10000,
       defaultArgs: { min: -0.5 },
       args: [
         { min: -0.5, stddev: 0.01 },
@@ -139,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
       yaxis: { range: [0, samples / 20] },
       xaxis: { range: [-3, 3] },
-      xbins: { min: -0.5, max: 0.5, size: 0.01 },
+      xbins: { size: 0.01 },
     },
     {
       name: 'normal',
@@ -152,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
       yaxis: { range: [0, samples / 20] },
       xaxis: { range: [-3, 3] },
-      xbins: { min: -0.5, max: 0.5, size: 0.01 },
+      xbins: { size: 0.01 },
     },
     {
       name: 'normal',
@@ -165,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ],
       yaxis: { range: [0, samples / 20] },
       xaxis: { range: [-3, 3] },
-      xbins: { min: -0.5, max: 0.5, size: 0.01 },
+      xbins: { size: 0.01 },
     },
     {
       name: 'normal',
@@ -176,10 +195,11 @@ document.addEventListener('DOMContentLoaded', () => {
         { min: 2, max: 3 }
       ],
       xaxis: { range: [-3, 5] },
-      xbins: { min: -2, max: 4, size: 0.01 },
+      xbins: { size: 0.01 },
     },
     {
       name: 'normal',
+      samples: 10000,
       args: [
         { min: -2, max: 0, skew: -1 },
         { min: -2, max: 0, skew: 0 },
@@ -195,10 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
         { min: 2, max: 3, skew: 1 }
       ],
       xaxis: { range: [-3, 5] },
-      xbins: { min: -2, max: 4, size: 0.01 },
+      xbins: { start: -2, end: 4, size: 0.01 },
     },
     {
       name: 'normal',
+      samples: 10000,
       defaultArgs: { mean: 0.5, min: 0, max: 1, stddev: 0.1 },
       args: [
         { skew: -2 },
@@ -241,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { skew: +2 },
         { skew: +3 },
       ],
-      xbins: { size: 0.005, min: 0, max: 1 },
+      xbins: { size: 0.005, start: 0, end: 1 },
     },
     {
       name: 'gaussian',
@@ -296,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { skew: +1 },
         { skew: +2 },
       ],
-      xbins,
+      xbins: { size: 1 },
     },
     {
       name: 'chancy',
@@ -422,6 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
       args: [
         { shape: 1, scale: 1, location: 0 },
         { shape: 5, scale: 1, location: 0 },
+        { shape: 5, scale: 1, location: 3 },
         { shape: 20, scale: 1, location: 0 },
       ],
       xaxis: { range: [0, 5] },
@@ -599,8 +621,16 @@ document.addEventListener('DOMContentLoaded', () => {
       xbins: { start: -5, end: 20, size: 0.05 },
     },
   ];
-
   const just = [];
+
+  if (urlParams.has('just')) {
+    const urlJust = urlParams.get('just');
+    if (typeof urlJust === 'string') {
+      urlJust.split(',').map(a => a.trim()).forEach(el => just.push(el));
+    } else if (Array.isArray(urlJust)) {
+      urlJust.forEach(el => just.push(el));
+    }
+  }
 
   const statuscont = document.getElementById('status');
 
@@ -623,15 +653,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     for (const args of fn.args ?? [{}]) {
       if (fn.args.length === 1 && !fn.show) {
-        if (Object.values(args).length === 0) {
+        if (args === null || Object.values(args).length === 0) {
           fn.show = `rng.${fn.name}()`;
         } else {
           fn.show = `rng.${fn.name}(${JSON.stringify(args)})`;
         }
       }
-      for (const k of Object.keys(args)) {
-        if (typeof (fn.defaultArgs ?? {})[k] === 'undefined') {
-          argNames.add(k);
+      if (args !== null) {
+        for (const k of Object.keys(args)) {
+          if (typeof (fn.defaultArgs ?? {})[k] === 'undefined') {
+            argNames.add(k);
+          }
         }
       }
       const fnargs = Object.assign({}, fn.defaultArgs ?? {}, args);
@@ -649,12 +681,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const results = [];
       for (let i = 0; i < numsamples; i++) {
         let result;
-        if (argtype === 'params') {
-          result = fn.fn.call(rng, ...Object.values(fnargs));
-        } else if (argtype === 'object') {
-          result = fn.fn.call(rng, fnargs);
+        if (args === null) {
+          result = fn.fn.call(rng);
         } else {
-          result = fn.fn.call(rng, ...Object.values(fnargs));
+          if (argtype === 'params') {
+            result = fn.fn.call(rng, ...Object.values(fnargs));
+          } else if (argtype === 'object') {
+            result = fn.fn.call(rng, fnargs);
+          } else {
+            result = fn.fn.call(rng, ...Object.values(fnargs));
+          }
         }
         results.push(result);
       }

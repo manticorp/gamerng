@@ -122,6 +122,37 @@ describe('testing Rng & predictable Rng', () => {
     expect(p2.sameAs(p1)).toBeTruthy();
   });
 
+  test('rng with seed set from another RNG should test the same', () => {
+    const p1 = new Rng('abc_123');
+    const p2 = new Rng();
+
+    p2.from(p1);
+
+    expect(p1.sameAs(p2)).toBeTruthy();
+    expect(p2.sameAs(p1)).toBeTruthy();
+
+    p1.random();
+    p2.from(p1);
+
+    expect(p1.sameAs(p2)).toBeTruthy();
+    expect(p2.sameAs(p1)).toBeTruthy();
+  });
+
+  test('rng with seed set from another RNG should generate the same next number', () => {
+    const p1 = new Rng('abc_123');
+    const p2 = new Rng();
+
+    p2.from(p1);
+
+    expect(p1.random()).toEqual(p2.random());
+    expect(p2.random()).toEqual(p1.random());
+
+    p2.from(p1);
+
+    expect(p1.random()).toEqual(p2.random());
+    expect(p2.random()).toEqual(p1.random());
+  });
+
   test('rng same as with same seed and randomSource should be true', () => {
     const p1 = new Rng('abc');
     const p2 = new Rng('abc');
@@ -362,19 +393,19 @@ describe('testing Rng & predictable Rng', () => {
     const seed2 = new Rng(1234);
     const seed3 = new Rng(1_000_000_000_000_000_000);
     const seed4 = new Rng(0x00FF00);
-    expect(seed1.random()).toMatchInlineSnapshot('0.3614412921015173');
-    expect(seed2.random()).toMatchInlineSnapshot('0.23745618015527725');
-    expect(seed3.random()).toMatchInlineSnapshot('0.23227926436811686');
-    expect(seed4.random()).toMatchInlineSnapshot('0.5058698654174805');
+    expect(seed1.random()).toMatchInlineSnapshot(`0.8457692288793623`);
+    expect(seed2.random()).toMatchInlineSnapshot(`0.7246124052908272`);
+    expect(seed3.random()).toMatchInlineSnapshot(`0.7201596270315349`);
+    expect(seed4.random()).toMatchInlineSnapshot(`0.32668209867551923`);
 
     seed1.seed('abc');
     seed2.seed(1234);
     seed3.seed(1_000_000_000_000_000_000);
     seed4.seed(0x00FF00);
-    expect(seed1.random()).toMatchInlineSnapshot('0.3614412921015173');
-    expect(seed2.random()).toMatchInlineSnapshot('0.23745618015527725');
-    expect(seed3.random()).toMatchInlineSnapshot('0.23227926436811686');
-    expect(seed4.random()).toMatchInlineSnapshot('0.5058698654174805');
+    expect(seed1.random()).toMatchInlineSnapshot(`0.8457692288793623`);
+    expect(seed2.random()).toMatchInlineSnapshot(`0.7246124052908272`);
+    expect(seed3.random()).toMatchInlineSnapshot(`0.7201596270315349`);
+    expect(seed4.random()).toMatchInlineSnapshot(`0.32668209867551923`);
   });
 
   test('Serialize basic', () => {
@@ -416,6 +447,22 @@ describe('testing Rng & predictable Rng', () => {
     for (let i = 0; i < 100; i++) {
       expect(orig.random()).toBe(other.random());
     }
+  });
+
+  test('Serialize old version throws', () => {
+    const serialized = { version: '0.1.0', seed: 123456 };
+    expect(() => {
+      const rng = Rng.unserialize(serialized);
+      rng.random();
+    }).toThrow();
+  });
+
+  test('Serialize old version does not throw for force', () => {
+    const serialized = { version: '0.1.0', seed: 123456 };
+    expect(() => {
+      const rng = Rng.unserialize(serialized, true);
+      expect(rng.random()).toEqual(expect.any(Number));
+    }).not.toThrow();
   });
 
   test('should calculate probabilities correctly', () => {

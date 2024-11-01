@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const r = monster.damage(rng);
 
     // Show the resulting damage
-    outputContainer.innerHTML += `<div>${monster.id} attacked for ${r}</div>`;
+    outputContainer.innerHTML += `<div>${monster.name} the ${monster.title} attacked for ${r}</div>`;
   };
 
   // For each of our monsters, we will create a button

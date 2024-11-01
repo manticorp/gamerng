@@ -1,9 +1,9 @@
-import Pool from './pool';
-import { DiceInterface, Distribution, Chancy, ChancyNumeric, Seed, Randfunc, RngInterface, RngDistributionsInterface } from './interface';
+import Pool from './pool.js';
+import { RotRngInterface } from './rng/rot.js';
+import { DiceInterface, Distribution, Chancy, ChancyNumeric, Seed, Randfunc, RngInterface, RngDistributionsInterface } from './interface.js';
 export interface SerializedRng {
-    mask: number;
     seed: number;
-    m_z: number;
+    version?: string;
 }
 export declare class MaxRecursionsError extends Error {
 }
@@ -19,6 +19,7 @@ export declare class NonRandomRandomError extends Error {
  */
 export declare abstract class RngAbstract implements RngInterface, RngDistributionsInterface {
     #private;
+    version: string;
     constructor(seed?: Seed);
     getSeed(): number;
     sameAs(other: RngInterface): boolean;
@@ -31,7 +32,7 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
      * {@inheritDoc RngConstructor.unserialize}
      * @group Serialization
      */
-    static unserialize(serialized: SerializedRng): RngInterface;
+    static unserialize<T extends RngAbstract>(this: new (seed?: Seed) => T, serialized: SerializedRng, force?: boolean): T;
     predictable(seed?: Seed): RngInterface;
     /**
      * {@inheritDoc RngInterface.predictable}
@@ -54,6 +55,7 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
     chanceTo(from: number, to: number): boolean;
     randInt(from?: number, to?: number, skew?: number): number;
     uniqid(prefix?: string): string;
+    static uniqid(prefix?: string): string;
     randomString(len?: number): string;
     randBetween(from?: number, to?: number, skew?: number): number;
     scale(number: number, from: number, to: number, min?: number, max?: number): number;
@@ -266,8 +268,6 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
  * @category Main Class
  */
 declare class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface {
-    #private;
-    constructor(seed?: Seed);
     /**
      * {@inheritDoc RngInterface.predictable}
      * @group Seeding
@@ -275,20 +275,13 @@ declare class Rng extends RngAbstract implements RngInterface, RngDistributionsI
     static predictable<Rng>(this: new (seed: Seed) => Rng, seed: Seed): Rng;
     serialize(): any;
     sameAs(other: any): boolean;
-    /** @hidden */
-    getMask(): number;
-    /** @hidden */
-    getMz(): number;
-    /** @hidden */
-    setMask(mask: number): void;
-    /** @hidden */
-    setMz(mz: number): void;
-    /**
-     * {@inheritDoc RngConstructor.unserialize}
-     * @group Serialization
-     */
-    static unserialize(serialized: SerializedRng): Rng;
-    seed(i?: Seed): this;
+    from(other: Rng): this;
     protected _next(): number;
+    /**
+     * Returns an object compatible with rot.js random number generator.
+     *
+     * @see [Rot.js](https://ondras.github.io/rot.js/manual/#rng)
+     */
+    rotCompatible(): RotRngInterface;
 }
 export default Rng;

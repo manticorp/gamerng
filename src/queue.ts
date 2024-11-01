@@ -19,6 +19,7 @@ export default class Dequeue<T> {
     if (this.elements.length > this.size) {
       return this.pop();
     }
+    return undefined;
   }
 
   public pop (): T | undefined {
@@ -75,6 +76,7 @@ export class NonRandomDetector<T> extends Dequeue<T> {
     if (this.elements.length > this.size) {
       return this.pop();
     }
+    return undefined;
   }
 
   public detectLoop (msg?: string) {

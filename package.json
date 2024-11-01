@@ -1,69 +1,62 @@
 {
   "name": "@manticorp/gamerng",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
-  "main": "dist/gamerng.cjs",
-  "browser": "dist/gamerng.cjs",
-  "module": "dist/gamerng.mjs",
-  "type": "module",
+  "main": "./dist/gamerng.js",
+  "browser": "./dist/gamerng.js",
+  "types": "./lib/index.d.ts",
   "exports": {
     "require": {
       "default": "./dist/gamerng.cjs",
-      "types": "./dist/types/index.d.ts"
+      "types": "./lib/index.d.ts"
     },
     "import": {
-      "default": "./dist/gamerng.mjs",
-      "types": "./dist/types/index.d.ts"
+      "default": "./lib/index.js",
+      "types": "./lib/index.d.ts"
     }
   },
-  "types": "./dist/types/index.d.ts",
+  "type": "module",
   "scripts": {
-    "watch": "webpack --mode development --config webpack.config.js --watch",
-    "dev": "webpack --mode development --config webpack.config.js",
-    "prebuild": "rimraf dist",
-    "build": "webpack --mode production --config webpack.config.js && webpack --mode production --config webpack-esm.config.js",
-    "build-copy": "npm run build && npm run copy",
-    "ci": "npm t && npm run test-build && npx typedoc && npm run copy",
-    "copy": "copyfiles -f ./dist/*.* ./docs/js",
-    "test-build": "npm run build && node test-build-common.cjs && node test-build-module.mjs",
     "test": "jest --coverage",
-    "test-watch": "jest --coverage --watchAll"
+    "test-watch": "jest --coverage --watchAll",
+    "build-copy": "npm run build && npm run copy",
+    "ci": "npm t && npm run build && npx typedoc && npm run copy",
+    "copy": "copyfiles -f ./dist/*.* ./docs/js",
+    "prebuild": "rimraf dist && rimraf lib && rimraf docs/js && node -p \"'export const CURRENT_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/constants/libver.ts",
+    "build": "npm run build-lib && npm run build-browser && npm run build-cjs && npm run build-min",
+    "build-lib": "npx tsc",
+    "build-browser": "npx rollup -c rollup-browser.config.mjs",
+    "build-cjs": "npx rollup -c rollup.config.mjs",
+    "build-min": " npx google-closure-compiler --js='dist/gamerng.js' --js_output_file='dist/gamerng.min.js' --language_out=ECMASCRIPT_2016 -W QUIET",
+    "watch": "npx tsc --watch"
   },
   "files": [
     "LICENSE",
     "README.md",
     "package.json",
-    "./dist/"
+    "./dist/",
+    "./lib/"
   ],
   "keywords": [],
   "author": "Harry Mustoe-Playfair <harry@mustoeplayfair.com>",
   "license": "MIT",
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/preset-env": "^7.25.4",
+    "@rollup/plugin-babel": "^6.0.4",
     "@types/jest": "^29.5.13",
-    "autoprefixer": "^10.4.20",
-    "babel-loader": "^9.2.1",
     "copyfiles": "^2.4.1",
-    "cpy-cli": "^5.0.0",
     "esbuild": "^0.24.0",
     "eslint": "^9.11.1",
-    "html-loader": "^5.1.0",
+    "google-closure-compiler": "^20240317.0.0",
     "jest": "^29.7.0",
     "jsdoc": "^4.0.3",
     "neostandard": "^0.11.6",
     "rimraf": "^6.0.1",
-    "rollup": "^4.24.0",
+    "rollup": "^4.24.3",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
-    "terser-webpack-plugin": "^5.3.10",
     "ts-jest": "^29.2.5",
-    "ts-loader": "^9.5.1",
     "typedoc": "^0.26.10",
     "typedoc-plugin-rename-defaults": "^0.7.1",
-    "typescript": "^5.6.2",
-    "val-loader": "^6.0.0",
-    "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4"
+    "typescript": "^5.6.2"
   }
 }

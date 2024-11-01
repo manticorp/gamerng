@@ -6,5 +6,9 @@ export default {
   testEnvironment: 'node',
   coveragePathIgnorePatterns: ['node_modules', 'src/log.ts'],
   testRegex: '/tests/.*\\.(test|spec)?\\.(ts|tsx)$',
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'node']
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'node'],
+  moduleNameMapper: {
+    '(.+)\\.js$': '$1'
+  },
+  extensionsToTreatAsEsm: ['.ts']
 };

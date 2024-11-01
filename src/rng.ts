@@ -1,7 +1,10 @@
-import validate from './number';
-import Pool from './pool';
-import { NonRandomDetector } from './queue';
-import { ChancyInterface, DiceInterface, Distribution, Chancy, ChancyNumeric, Seed, Randfunc, RngInterface, RngDistributionsInterface } from './interface';
+import validate from './number.js';
+import Pool from './pool.js';
+import { NonRandomDetector } from './queue.js';
+import { RotRngInterface } from './rng/rot.js';
+import { ChancyInterface, DiceInterface, Distribution, Chancy, ChancyNumeric, Seed, Randfunc, RngInterface, RngDistributionsInterface } from './interface.js';
+import { CURRENT_VERSION } from './constants/libver.js';
+import Version from './version.js';
 
 /**
  * Safeguard against huge loops. If loops unintentionally grow beyond this
@@ -25,13 +28,41 @@ const diceRe: RegExp = /^ *([+-]? *[0-9_]*) *[dD] *([0-9_]+) *([+-]? *[0-9_.]*) 
 const strToNumberCache: Record<string, number> = {};
 const diceCache: Record<string, DiceInterface> = {};
 
-export interface SerializedRng {
-  mask: number,
-  seed: number,
-  m_z: number,
+let monotonic: number = 0;
+let lastuniqid: number = 0;
+
+function uniqid (prefix: string = '') {
+  const now = Date.now() * 1000;
+  if (lastuniqid === now) {
+    monotonic++;
+  } else {
+    monotonic = 0;
+  }
+  const sec = now + monotonic;
+  const id = sec.toString(16).replace(/\./g, '').padEnd(14, '0');
+  lastuniqid = now;
+  return `${prefix}${id}`;
 }
 
-export class MaxRecursionsError extends Error {};
+let lastSeed = Date.now();
+let mono = 0;
+const randomSeed = () => {
+  const now = Date.now();
+  if (lastSeed === now) {
+    mono += (1297357) % 1000000;
+  } else {
+    mono = 0;
+  }
+  lastSeed = now;
+  return (now * 1000000) + mono;
+};
+
+export interface SerializedRng {
+  seed: number,
+  version?: string,
+}
+
+export class MaxRecursionsError extends Error {}
 export class NonRandomRandomError extends Error {}
 
 function sum (numbers: number[], ...other: []): number;
@@ -56,9 +87,8 @@ function isNumeric (input: any) {
  * in a separate file.
  */
 export abstract class RngAbstract implements RngInterface, RngDistributionsInterface {
+  version: string = CURRENT_VERSION;
   #seed: number = 0;
-  #monotonic: number = 0;
-  #lastuniqid: number = 0;
   #randFunc?: Randfunc | null;
   #shouldThrowOnMaxRecursionsReached?: boolean;
   #distributions: Distribution[] = [
@@ -100,7 +130,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
 
   public sameAs (other: RngInterface): boolean {
     if (other instanceof RngAbstract) {
-      return this.#seed === other.#seed && this.#randFunc === other.#randFunc;
+      return this.getSeed() === other.getSeed() && this.getRandomSource() === other.getRandomSource();
     }
     return false;
   }
@@ -121,7 +151,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
       }
       this.#seed = seed;
     } else {
-      return this.setSeed(Math.ceil(Math.random() * 100000000));
+      return this.setSeed(randomSeed());
     }
     return this;
   }
@@ -134,6 +164,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   public serialize (): any {
     return {
       seed: this.#seed,
+      version: CURRENT_VERSION
     };
   }
 
@@ -141,10 +172,18 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
    * {@inheritDoc RngConstructor.unserialize}
    * @group Serialization
    */
-  public static unserialize (serialized: SerializedRng): RngInterface {
-    const { constructor } = Object.getPrototypeOf(this);
-    const rng = new constructor(serialized.seed);
-    rng.setSeed(serialized.seed);
+  public static unserialize<T extends RngAbstract> (this: new (seed?: Seed) => T, serialized: SerializedRng, force = false): T {
+    const otherVer = new Version(serialized.version ?? '0.1.0');
+    const minver = '0.2.0';
+    if (otherVer.lt(minver) && !force) {
+      throw new Error(`Trying to unserialize old RNG (v${serialized.version}) can lead to unexpected behaviour - minimum supported version for this iteration is ${minver}.
+  If you want to unserialize anyway, use the 'force' argument:
+
+  GameRng.unserialize(serialized, true);`);
+    }
+
+    const rng = new this(serialized.seed);
+    rng.seed(serialized.seed);
     return rng;
   }
 
@@ -242,16 +281,11 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   }
 
   public uniqid (prefix: string = ''): string {
-    const now = Date.now() * 1000;
-    if (this.#lastuniqid === now) {
-      this.#monotonic++;
-    } else {
-      this.#monotonic = Math.round(this._random() * 100);
-    }
-    const sec = now + this.#monotonic;
-    const id = sec.toString(16).replace(/\./g, '').padEnd(14, '0');
-    this.#lastuniqid = now;
-    return `${prefix}${id}`;
+    return uniqid(prefix);
+  }
+
+  public static uniqid (prefix: string = ''): string {
+    return uniqid(prefix);
   }
 
   public randomString (len: number = 6): string {
@@ -274,7 +308,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     let rand = this._random();
     if (skew < 0) {
       rand = 1 - (Math.pow(rand, Math.pow(2, skew)));
-    } else {
+    } else if (skew > 0) {
       rand = Math.pow(rand, Math.pow(2, -skew));
     }
     return this.scaleNorm(rand, from, to);
@@ -817,6 +851,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
       return Math.round(choice);
     }
     if (typeof input === 'object') {
+      input = { ...input };
       const type = input.type ?? 'random';
       if (type === 'random') {
         input.type = 'integer';
@@ -829,7 +864,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
 
   public chancy<T>(input: T[], depth?: number): T;
   public chancy (input: ChancyNumeric, depth?: number): number;
-  public chancy(input: Chancy, depth = 0): any {
+  public chancy (input: Chancy, depth = 0): any {
     if (depth >= MAX_RECURSIONS) {
       if (this.shouldThrowOnMaxRecursionsReached()) {
         throw new MaxRecursionsError('Max recursions reached in chancy. Usually a case of badly chosen min/max values.');
@@ -844,6 +879,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
       return this.dice(input);
     }
     if (typeof input === 'object') {
+      input = { ...input };
       input.type = input.type ?? 'random';
 
       if (
@@ -872,7 +908,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
           );
         case 'normal_integer':
         case 'normal_int':
-          return Math.floor(this.normal(input));
+          return Math.round(this.normal(input));
         case 'dice':
           return this.chancyMinMax(this.dice(input.dice ?? input), input, depth);
         case 'rademacher':
@@ -1186,7 +1222,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
       if (data.size === 1) {
         return data.keys().next().value;
       }
-      data.forEach((value, key) => {
+      data.forEach((value) => {
         total += value;
       });
     } else {
@@ -1224,8 +1260,6 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
       }
     }
 
-    // If by some floating-point annoyance we have
-    // random >= total, just return the last id.
     return id;
   }
 
@@ -1263,7 +1297,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
 
   protected parseDiceArgs (n: string | Partial<DiceInterface> | number | number[] = 1, d: number = 6, plus: number = 0): DiceInterface {
     const { constructor } = Object.getPrototypeOf(this);
-    return constructor.parseDiceArgs(n);
+    return constructor.parseDiceArgs(n, d, plus);
   }
 
   /**
@@ -1397,16 +1431,6 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
  * @category Main Class
  */
 class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface {
-  #mask: number;
-  #seed: number = 0;
-  #randFunc?: Randfunc | null;
-  #m_z: number = 0;
-  constructor (seed?: Seed) {
-    super(seed);
-    this.#mask = 0xffffffff;
-    this.#m_z = 987654321;
-  }
-
   /**
    * {@inheritDoc RngInterface.predictable}
    * @group Seeding
@@ -1417,66 +1441,92 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
 
   public serialize (): any {
     return {
-      mask: this.getMask(),
       seed: this.getSeed(),
-      m_z: this.getMz(),
+      version: CURRENT_VERSION
     };
   }
 
   public sameAs (other: any): boolean {
     if (other instanceof Rng) {
       return this.getRandomSource() === other.getRandomSource() &&
-        this.getSeed() === other.getSeed() &&
-        this.getMask() === other.getMask() &&
-        this.getMz() === other.getMz();
+        this.getSeed() === other.getSeed();
     }
     return false;
   }
 
-  /** @hidden */
-  public getMask (): number {
-    return this.#mask;
-  }
-
-  /** @hidden */
-  public getMz (): number {
-    return this.#m_z;
-  }
-
-  /** @hidden */
-  public setMask (mask: number): void {
-    this.#mask = mask;
-  }
-
-  /** @hidden */
-  public setMz (mz: number): void {
-    this.#m_z = mz;
-  }
-
-  /**
-   * {@inheritDoc RngConstructor.unserialize}
-   * @group Serialization
-   */
-  public static unserialize (serialized: SerializedRng): Rng {
-    const rng = new this();
-    rng.setSeed(serialized.seed);
-    rng.setMask(serialized.mask);
-    rng.setMz(serialized.m_z);
-    return rng;
-  }
-
-  public seed (i?: Seed): this {
-    super.seed(i);
-    this.#m_z = 987654321;
+  public from (other: Rng): this {
+    this.setSeed(other.getSeed());
     return this;
   }
 
   protected _next (): number {
-    this.#m_z = (36969 * (this.#m_z & 65535) + (this.#m_z >> 16)) & this.#mask;
-    this.setSeed((18000 * (this.getSeed() & 65535) + (this.getSeed() >> 16)) & this.#mask);
-    let result = ((this.#m_z << 16) + this.getSeed()) & this.#mask;
-    result /= 4294967296;
-    return result + 0.5;
+    this.setSeed((this.getSeed() + 0x9e3779b9) | 0);
+    let z = this.getSeed();
+    z ^= z >>> 16;
+    z = Math.imul(z, 0x21f0aaad);
+    z ^= z >>> 15;
+    z = Math.imul(z, 0x735a2d97);
+    z ^= z >>> 15;
+    return (z >>> 0) / 0x100000000;
+  }
+
+  /**
+   * Returns an object compatible with rot.js random number generator.
+   *
+   * @see [Rot.js](https://ondras.github.io/rot.js/manual/#rng)
+   */
+  public rotCompatible () : RotRngInterface {
+    const rng = this;
+    return {
+      getUniform () {
+        return rng.random();
+      },
+
+      getUniformInt (lowerBound: number, upperBound: number) {
+        return rng.randInt(lowerBound, upperBound);
+      },
+
+      getNormal (mean: number = 0, stddev: number = 1) {
+        return rng.boxMuller({ mean, stddev });
+      },
+
+      getPercentage () {
+        return 1 + Math.floor(this.getUniform() * 100);
+      },
+
+      getItem<T> (array: Array<T>) {
+        if (!array.length) { return null; }
+        return array[Math.floor(this.getUniform() * array.length)];
+      },
+
+      shuffle<T>(array: Array<T>) {
+        const result = [];
+        const clone = array.slice();
+        while (clone.length) {
+          const index = clone.indexOf(this.getItem(clone) as T);
+          result.push(clone.splice(index, 1)[0]);
+        }
+        return result;
+      },
+
+      getWeightedValue (data: { [key: string]: number, [key: number]: number }) {
+        return rng.weightedChoice(data);
+      },
+
+      getState (): SerializedRng {
+        return rng.serialize();
+      },
+
+      setState (state: SerializedRng) {
+        rng.setSeed(state.seed);
+        return this;
+      },
+
+      clone (): RotRngInterface {
+        const clone = new Rng().rotCompatible();
+        return clone.setState(this.getState());
+      }
+    };
   }
 }
 

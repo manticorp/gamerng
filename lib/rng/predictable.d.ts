@@ -1,5 +1,5 @@
-import { RngAbstract } from './../rng';
-import { RngDistributionsInterface, RngInterface, Seed } from './../interface';
+import { RngAbstract } from './../rng.js';
+import { RngDistributionsInterface, RngInterface, Seed } from './../interface.js';
 /**
  *
  * An Rng type that can be used to give predictable results

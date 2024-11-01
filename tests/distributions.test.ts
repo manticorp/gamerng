@@ -57,8 +57,11 @@ describe('Testing RNG Distributions specifically', () => {
     });
 
     test('should generate a value from the Pareto distribution', () => {
-      const result = rng.pareto({ shape: 1, scale: 1 });
-      expect(result).toBeGreaterThanOrEqual(1);
+      const result = rng.pareto({ shape: 1, scale: 1, location: 0 });
+      expect(result).toBeGreaterThanOrEqual(0);
+
+      const result2 = rng.pareto({ shape: 1, scale: 1, location: 5 });
+      expect(result2).toBeGreaterThanOrEqual(5);
     });
 
     test('should generate a value from the Poisson distribution', () => {
@@ -277,6 +280,12 @@ describe('Testing RNG Distributions specifically', () => {
       expect(() => {
         rng.pareto({ scale: -2 });
       }).toThrow(NumberValidationError);
+    });
+
+    test('test support', () => {
+      for (let i = 0; i < mdruns; i++) {
+        expect(rng.pareto({ location: 0 })).toBeGreaterThanOrEqual(0);
+      }
     });
   });
 

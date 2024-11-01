@@ -2,6 +2,14 @@ import { default as validate, NumberValidationError, ArrayNumberValidator, Numbe
 
 describe('Testing Number Validation', () => {
   describe('validate function', () => {
+    test('validate returns correct validator for array', () => {
+      expect(validate([1, 2, 3])).toBeInstanceOf(ArrayNumberValidator);
+    });
+
+    test('validate returns correct validator for array', () => {
+      expect(validate(5)).toBeInstanceOf(NumberValidator);
+    });
+
     test('basic suite', () => {
       expect(() => {
         // Validate single numbers
@@ -53,6 +61,12 @@ describe('Testing Number Validation', () => {
 
       expect(arrvalidator.name).toBe('my_array');
       expect(arrvalidator.numbers).toBe(nums);
+
+      const myVar = 5;
+      const myVarValidator = validate({ myVar });
+
+      expect(myVarValidator.name).toBe('myVar');
+      expect(myVarValidator.number).toBe(5);
     });
 
     test('fluent chaining', () => {

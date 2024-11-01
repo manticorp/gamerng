@@ -44,16 +44,22 @@
                 color: rgba(20, 23, 25, 1);
             }
 
+            #current-roll.rolling {
+                opacity: 0.5;
+                color: rgba(50,0,0,1);
+            }
+
             #current-roll .die {
                 cursor: pointer;
             }
 
-            .die.kept {
-                color: rgba(0,0,0,0.1);
-            }
-
             #bank, #current-roll {
                 font-size: 4rem;
+            }
+
+            .die.kept {
+                color: rgba(0,0,0,1);
+                opacity: 0.1;
             }
         </style>
     </head>

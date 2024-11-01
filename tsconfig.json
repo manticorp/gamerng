@@ -1,24 +1,24 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2017",
     "lib": ["ESNext" ],
-    "module": "esnext",
-    "rootDir": "./src/",
-    "moduleResolution": "node10",
-    "baseUrl": "./",
     "strict": true,
     "declaration": true,
     "sourceMap": true,
-    "outDir": "./dist",
-    "declarationDir": "./dist/types",
-    "esModuleInterop": true,
+    "baseUrl": "./",
+    "rootDir": "./src/",
+    "outDir": "./lib",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "jsx": "react",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedParameters": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true
   },
-  "include": ["src"],
-  "exclude" : ["dist/", "docs/", "node_modules/", "package.json"]
+  "files": ["src/index.ts", "src/browser.ts"]
 }
