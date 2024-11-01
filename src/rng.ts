@@ -145,7 +145,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     return this.#randFunc;
   }
 
-  protected setSeed (seed?: Seed): this {
+  public setSeed (seed?: Seed): this {
     if (typeof seed !== 'undefined' && seed !== null) {
       if (typeof seed === 'string') {
         seed = this.convertStringToNumber(seed);
@@ -1512,6 +1512,15 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
 
       getWeightedValue (data: { [key: string]: number, [key: number]: number }) {
         return rng.weightedChoice(data);
+      },
+
+      getSeed (): number {
+        return rng.getSeed();
+      },
+
+      setSeed (seed: Seed) {
+        rng.setSeed(seed);
+        return this;
       },
 
       getState (): SerializedRng {

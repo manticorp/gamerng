@@ -2399,6 +2399,13 @@
           getWeightedValue(data) {
             return rng.weightedChoice(data);
           },
+          getSeed() {
+            return rng.getSeed();
+          },
+          setSeed(seed) {
+            rng.setSeed(seed);
+            return this;
+          },
           getState() {
             return rng.serialize();
           },

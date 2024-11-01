@@ -10,6 +10,8 @@ export interface RotRngInterface {
         [key: string]: number;
         [key: number]: number;
     }): string | number;
+    getSeed(): number;
+    setSeed(state: string | number): this;
     getState(): SerializedRng;
     setState(state: SerializedRng): this;
     clone(): RotRngInterface;

@@ -26,7 +26,7 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
     sameAs(other: RngInterface): boolean;
     randomSource(source?: Randfunc | null): this;
     getRandomSource(): Randfunc | null | undefined;
-    protected setSeed(seed?: Seed): this;
+    setSeed(seed?: Seed): this;
     seed(seed?: Seed): this;
     serialize(): any;
     /**
