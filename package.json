@@ -1,10 +1,11 @@
 {
   "name": "@manticorp/gamerng",
-  "version": "0.3.0",
-  "description": "",
+  "version": "0.3.1",
+  "description": "The most powerful RNG in the world for game use - flexible, performant, seedable, serializable, reliable.",
   "main": "./dist/gamerng.js",
   "browser": "./dist/gamerng.js",
   "types": "./lib/index.d.ts",
+  "source": "./src/index.ts",
   "exports": {
     "require": {
       "default": "./dist/gamerng.cjs",
@@ -37,7 +38,38 @@
     "./dist/",
     "./lib/"
   ],
-  "keywords": [],
+  "funding": {
+    "type": "individual",
+    "url": "https://ko-fi.com/harrymustoeplayfair"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/manticorp/gamerng.git"
+  },
+  "homepage": "https://github.com/manticorp/gamerng",
+  "bugs": {
+    "url": "https://github.com/manticorp/gamerng/issues",
+    "email": "harry.mustoeplayfair@gmail.com"
+  },
+  "keywords": [
+    "rng",
+    "game",
+    "random",
+    "dice",
+    "normal",
+    "distribution",
+    "random number generator",
+    "typescript",
+    "chancy",
+    "random choice",
+    "weighted choice",
+    "biased",
+    "rpg",
+    "roller",
+    "rand",
+    "randint",
+    "randbetween"
+  ],
   "author": "Harry Mustoe-Playfair <harry@mustoeplayfair.com>",
   "license": "MIT",
   "devDependencies": {
