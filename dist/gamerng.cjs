@@ -11,18 +11,6 @@
       return parseInt(str);
     };
 
-    var __classPrivateFieldGet$2 = undefined && undefined.__classPrivateFieldGet || function (receiver, state, kind, f) {
-      if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-      if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-      return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-    };
-    var __classPrivateFieldSet$2 = undefined && undefined.__classPrivateFieldSet || function (receiver, state, value, kind, f) {
-      if (kind === "m") throw new TypeError("Private method is not writable");
-      if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-      if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-      return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
-    };
-    var _ArrayNumberValidator_numbers, _NumberValidator_number;
     /**
      * @category Number Validator
      */
@@ -39,26 +27,26 @@
      * @category Number Validator
      */
     class ArrayNumberValidator {
+      /**
+       * The numbers to be validated
+       */
+      #numbers = [];
+      /**
+       * Descriptive name for this validation
+       */
+      name = 'numbers';
       constructor(numbers, name = 'numbers') {
-        /**
-         * The numbers to be validated
-         */
-        _ArrayNumberValidator_numbers.set(this, []);
-        /**
-         * Descriptive name for this validation
-         */
-        this.name = 'numbers';
         this.numbers = numbers;
         this.name = name;
       }
       get numbers() {
-        return __classPrivateFieldGet$2(this, _ArrayNumberValidator_numbers, "f");
+        return this.#numbers;
       }
       set numbers(numbers) {
         for (const number of numbers) {
           assert(typeof number === 'number', `Non-number passed to validator ${number}`);
         }
-        __classPrivateFieldSet$2(this, _ArrayNumberValidator_numbers, numbers, "f");
+        this.#numbers = numbers;
       }
       /**
        * Specify the numbers to validate
@@ -103,7 +91,7 @@
        * @throws {@link NumberValidationError} If they do not sum close to the correct amount
        */
       sumcloseto(sum, diff = 0.0001, msg) {
-        assert(Math.abs(this.sum() - sum) < diff, msg !== null && msg !== void 0 ? msg : `Expected sum of ${this.name} to be within ${diff} of ${sum}, got ${this.sum()}`);
+        assert(Math.abs(this.sum() - sum) < diff, msg ?? `Expected sum of ${this.name} to be within ${diff} of ${sum}, got ${this.sum()}`);
         return this;
       }
       /**
@@ -113,7 +101,7 @@
        * @throws {@link NumberValidationError} If they do not total to the correct amount
        */
       sumto(sum, msg) {
-        assert(this.sum() === sum, msg !== null && msg !== void 0 ? msg : `Expected sum of ${this.name} to be equal to ${sum}, got ${this.sum()}`);
+        assert(this.sum() === sum, msg ?? `Expected sum of ${this.name} to be equal to ${sum}, got ${this.sum()}`);
         return this;
       }
       /**
@@ -123,7 +111,7 @@
        * @throws {@link NumberValidationError} If they do not total to < sum
        */
       sumtolt(sum, msg) {
-        assert(this.sum() < sum, msg !== null && msg !== void 0 ? msg : `Expected sum of ${this.name} to be less than ${sum}, got ${this.sum()}`);
+        assert(this.sum() < sum, msg ?? `Expected sum of ${this.name} to be less than ${sum}, got ${this.sum()}`);
         return this;
       }
       /**
@@ -133,7 +121,7 @@
        * @throws {@link NumberValidationError} If they do not total to > sum
        */
       sumtogt(sum, msg) {
-        assert(this.sum() > sum, msg !== null && msg !== void 0 ? msg : `Expected sum of ${this.name} to be greater than ${sum}, got ${this.sum()}`);
+        assert(this.sum() > sum, msg ?? `Expected sum of ${this.name} to be greater than ${sum}, got ${this.sum()}`);
         return this;
       }
       /**
@@ -143,7 +131,7 @@
        * @throws {@link NumberValidationError} If they do not total to <= sum
        */
       sumtolteq(sum, msg) {
-        assert(this.sum() <= sum, msg !== null && msg !== void 0 ? msg : `Expected sum of ${this.name} to be less than or equal to ${sum}, got ${this.sum()}`);
+        assert(this.sum() <= sum, msg ?? `Expected sum of ${this.name} to be less than or equal to ${sum}, got ${this.sum()}`);
         return this;
       }
       /**
@@ -153,74 +141,73 @@
        * @throws {@link NumberValidationError} If they do not total to >= sum
        */
       sumtogteq(sum, msg) {
-        assert(this.sum() >= sum, msg !== null && msg !== void 0 ? msg : `Expected sum of ${this.name} to be greater than or equal to ${sum}, got ${this.sum()}`);
+        assert(this.sum() >= sum, msg ?? `Expected sum of ${this.name} to be greater than or equal to ${sum}, got ${this.sum()}`);
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all integers
        */
       int(msg) {
-        this.numbers.forEach(a => validate(a).int(msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be an integer, got ${a}`));
+        this.numbers.forEach(a => validate(a).int(msg ?? `Expected every component of ${this.name} to be an integer, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all positive
        */
       positive(msg) {
-        this.numbers.forEach(a => validate(a).positive(msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be postiive, got ${a}`));
+        this.numbers.forEach(a => validate(a).positive(msg ?? `Expected every component of ${this.name} to be postiive, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all negative
        */
       negative(msg) {
-        this.numbers.forEach(a => validate(a).negative(msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be negative, got ${a}`));
+        this.numbers.forEach(a => validate(a).negative(msg ?? `Expected every component of ${this.name} to be negative, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all between from and to
        */
       between(from, to, msg) {
-        this.numbers.forEach(a => validate(a).between(from, to, msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be between ${from} and ${to}, got ${a}`));
+        this.numbers.forEach(a => validate(a).between(from, to, msg ?? `Expected every component of ${this.name} to be between ${from} and ${to}, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all between or equal to from and to
        */
       betweenEq(from, to, msg) {
-        this.numbers.forEach(a => validate(a).betweenEq(from, to, msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be between or equal to ${from} and ${to}, got ${a}`));
+        this.numbers.forEach(a => validate(a).betweenEq(from, to, msg ?? `Expected every component of ${this.name} to be between or equal to ${from} and ${to}, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all > n
        */
       gt(n, msg) {
-        this.numbers.forEach(a => validate(a).gt(n, msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be > ${n}, got ${a}`));
+        this.numbers.forEach(a => validate(a).gt(n, msg ?? `Expected every component of ${this.name} to be > ${n}, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all >= n
        */
       gteq(n, msg) {
-        this.numbers.forEach(a => validate(a).gteq(n, msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be >= ${n}, got ${a}`));
+        this.numbers.forEach(a => validate(a).gteq(n, msg ?? `Expected every component of ${this.name} to be >= ${n}, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all < n
        */
       lt(n, msg) {
-        this.numbers.forEach(a => validate(a).lt(n, msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be < ${n}, got ${a}`));
+        this.numbers.forEach(a => validate(a).lt(n, msg ?? `Expected every component of ${this.name} to be < ${n}, got ${a}`));
         return this;
       }
       /**
        * @throws {@link NumberValidationError} if numbers are not all <= n
        */
       lteq(n, msg) {
-        this.numbers.forEach(a => validate(a).lteq(n, msg !== null && msg !== void 0 ? msg : `Expected every component of ${this.name} to be <= ${n}, got ${a}`));
+        this.numbers.forEach(a => validate(a).lteq(n, msg ?? `Expected every component of ${this.name} to be <= ${n}, got ${a}`));
         return this;
       }
     }
-    _ArrayNumberValidator_numbers = new WeakMap();
     /**
      * Validate numbers in a fluent fashion.
      *
@@ -239,15 +226,15 @@
      * n.validate(probability).gteq(0, 'Probabilities should always be >= 0'); // NumberValidationError('Probabilities should always be >= 0').
      */
     class NumberValidator {
+      /**
+       * The number being tested.
+       */
+      #number;
+      /**
+       * The name of the variable being validated - shows up in error messages.
+       */
+      name = 'number';
       constructor(number = 0, name = 'number') {
-        /**
-         * The number being tested.
-         */
-        _NumberValidator_number.set(this, void 0);
-        /**
-         * The name of the variable being validated - shows up in error messages.
-         */
-        this.name = 'number';
         if (typeof number === 'string') {
           number = parseFloat(number);
         }
@@ -255,20 +242,20 @@
         this.name = name;
       }
       get number() {
-        return __classPrivateFieldGet$2(this, _NumberValidator_number, "f");
+        return this.#number;
       }
       set number(number) {
         assert(isNumeric$1(number), `Non-number passed to validator ${number}`);
         if (typeof number === 'string') {
           number = parseFloat('number');
         }
-        __classPrivateFieldSet$2(this, _NumberValidator_number, number, "f");
+        this.#number = number;
       }
       /**
        * Returns an ArrayNumberValidator for all the numbers
        */
       all(numbers, name) {
-        return new ArrayNumberValidator(numbers, name !== null && name !== void 0 ? name : this.name);
+        return new ArrayNumberValidator(numbers, name ?? this.name);
       }
       assertNumber(num) {
         assert(typeof num !== 'undefined', 'No number passed to validator.');
@@ -306,7 +293,7 @@
        * @throws {@link NumberValidationError} if ths number is not an integer
        */
       int(msg) {
-        if (this.assertNumber(this.number)) assert(Number.isInteger(this.number), msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be an integer, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(Number.isInteger(this.number), msg ?? `Expected ${this.name} to be an integer, got ${this.number}`);
         return this;
       }
       /**
@@ -314,21 +301,21 @@
        * @throws {@link NumberValidationError} if the number is not positive
        */
       positive(msg) {
-        return this.gt(0, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be positive, got ${this.number}`);
+        return this.gt(0, msg ?? `Expected ${this.name} to be positive, got ${this.number}`);
       }
       /**
        * Asserts that the number is < 0
        * @throws {@link NumberValidationError} if the number is not negative
        */
       negative(msg) {
-        return this.lt(0, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be negative, got ${this.number}`);
+        return this.lt(0, msg ?? `Expected ${this.name} to be negative, got ${this.number}`);
       }
       /**
        * Asserts that the from < number < to
        * @throws {@link NumberValidationError} if it is outside or equal to those bounds
        */
       between(from, to, msg) {
-        if (this.assertNumber(this.number)) assert(this.number > from && this.number < to, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be between ${from} and ${to}, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(this.number > from && this.number < to, msg ?? `Expected ${this.name} to be between ${from} and ${to}, got ${this.number}`);
         return this;
       }
       /**
@@ -336,7 +323,7 @@
        * @throws {@link NumberValidationError} if it is outside those bounds
        */
       betweenEq(from, to, msg) {
-        if (this.assertNumber(this.number)) assert(this.number >= from && this.number <= to, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be between or equal to ${from} and ${to}, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(this.number >= from && this.number <= to, msg ?? `Expected ${this.name} to be between or equal to ${from} and ${to}, got ${this.number}`);
         return this;
       }
       /**
@@ -344,7 +331,7 @@
        * @throws {@link NumberValidationError} if it is less than or equal to n
        */
       gt(n, msg) {
-        if (this.assertNumber(this.number)) assert(this.number > n, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be greater than ${n}, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(this.number > n, msg ?? `Expected ${this.name} to be greater than ${n}, got ${this.number}`);
         return this;
       }
       /**
@@ -352,7 +339,7 @@
        * @throws {@link NumberValidationError} if it is less than n
        */
       gteq(n, msg) {
-        if (this.assertNumber(this.number)) assert(this.number >= n, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be greater than or equal to ${n}, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(this.number >= n, msg ?? `Expected ${this.name} to be greater than or equal to ${n}, got ${this.number}`);
         return this;
       }
       /**
@@ -360,7 +347,7 @@
        * @throws {@link NumberValidationError} if it is greater than or equal to n
        */
       lt(n, msg) {
-        if (this.assertNumber(this.number)) assert(this.number < n, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be less than ${n}, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(this.number < n, msg ?? `Expected ${this.name} to be less than ${n}, got ${this.number}`);
         return this;
       }
       /**
@@ -368,11 +355,10 @@
        * @throws {@link NumberValidationError} if it is greater than n
        */
       lteq(n, msg) {
-        if (this.assertNumber(this.number)) assert(this.number <= n, msg !== null && msg !== void 0 ? msg : `Expected ${this.name} to be less than or equal to ${n}, got ${this.number}`);
+        if (this.assertNumber(this.number)) assert(this.number <= n, msg ?? `Expected ${this.name} to be less than or equal to ${n}, got ${this.number}`);
         return this;
       }
     }
-    _NumberValidator_number = new WeakMap();
     function validate(number) {
       if (Array.isArray(number)) {
         return new ArrayNumberValidator(number);
@@ -388,18 +374,6 @@
       }
     }
 
-    var __classPrivateFieldGet$1 = undefined && undefined.__classPrivateFieldGet || function (receiver, state, kind, f) {
-      if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-      if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-      return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-    };
-    var __classPrivateFieldSet$1 = undefined && undefined.__classPrivateFieldSet || function (receiver, state, value, kind, f) {
-      if (kind === "m") throw new TypeError("Private method is not writable");
-      if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-      if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-      return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
-    };
-    var _Pool_entries;
     /**
      * @category Pool
      */
@@ -413,8 +387,9 @@
      * @category Pool
      */
     class Pool {
+      rng;
+      #entries = [];
       constructor(entries = [], rng) {
-        _Pool_entries.set(this, []);
         this.entries = entries;
         if (rng) {
           this.rng = rng;
@@ -430,16 +405,16 @@
         return this;
       }
       getEntries() {
-        return __classPrivateFieldGet$1(this, _Pool_entries, "f");
+        return this.#entries;
       }
       set entries(entries) {
-        __classPrivateFieldSet$1(this, _Pool_entries, this.copyArray(entries), "f");
+        this.#entries = this.copyArray(entries);
       }
       get entries() {
-        return __classPrivateFieldGet$1(this, _Pool_entries, "f");
+        return this.#entries;
       }
       get length() {
-        return __classPrivateFieldGet$1(this, _Pool_entries, "f").length;
+        return this.#entries.length;
       }
       setRng(rng) {
         this.rng = rng;
@@ -449,10 +424,10 @@
         return this.rng;
       }
       add(entry) {
-        __classPrivateFieldGet$1(this, _Pool_entries, "f").push(entry);
+        this.#entries.push(entry);
       }
       empty() {
-        __classPrivateFieldSet$1(this, _Pool_entries, [], "f");
+        this.#entries = [];
         return this;
       }
       isEmpty() {
@@ -468,10 +443,10 @@
           throw new PoolEmptyError('No more elements left to draw from in pool.');
         }
         if (this.length === 1) {
-          return __classPrivateFieldGet$1(this, _Pool_entries, "f").splice(0, 1)[0];
+          return this.#entries.splice(0, 1)[0];
         }
-        const idx = this.rng.randInt(0, __classPrivateFieldGet$1(this, _Pool_entries, "f").length - 1);
-        return __classPrivateFieldGet$1(this, _Pool_entries, "f").splice(idx, 1)[0];
+        const idx = this.rng.randInt(0, this.#entries.length - 1);
+        return this.#entries.splice(idx, 1)[0];
       }
       /**
        * Draw n elements from the pool, without replacement.
@@ -491,17 +466,17 @@
         }
         const result = [];
         for (let i = 0; i < n; i++) {
-          const idx = this.rng.randInt(0, __classPrivateFieldGet$1(this, _Pool_entries, "f").length - 1);
-          result.push(__classPrivateFieldGet$1(this, _Pool_entries, "f").splice(idx, 1)[0]);
+          const idx = this.rng.randInt(0, this.#entries.length - 1);
+          result.push(this.#entries.splice(idx, 1)[0]);
         }
         return result;
       }
     }
-    _Pool_entries = new WeakMap();
 
     class Dequeue {
+      size;
+      elements = [];
       constructor(length = 1) {
-        this.elements = [];
         if (Array.isArray(length)) {
           this.elements = length;
           this.size = this.elements.length;
@@ -540,10 +515,10 @@
     }
     class LoopDetectedError extends Error {}
     class NonRandomDetector extends Dequeue {
+      minsequencelength = 2;
+      errormessage = 'Loop detected in input data. Randomness source not random?';
       constructor(length = 1, minsequencelength = 2) {
         super(length);
-        this.minsequencelength = 2;
-        this.errormessage = 'Loop detected in input data. Randomness source not random?';
         if (this.size > 10000) {
           throw new Error('Cannot detect loops for more than 10000 elements');
         }
@@ -568,7 +543,7 @@
         }
       }
       loopDetected(msg) {
-        throw new LoopDetectedError(msg !== null && msg !== void 0 ? msg : this.errormessage);
+        throw new LoopDetectedError(msg ?? this.errormessage);
       }
       /**
        * Checks if there is a repeating sequence longer than a specified length in an array of numbers.
@@ -611,12 +586,12 @@
       return 1;
     };
     class Version {
+      major = 0;
+      minor = 0;
+      patch = 0;
+      build;
+      presplit = [];
       constructor(major, minor, patch = 0, prerelease, build) {
-        var _a;
-        this.major = 0;
-        this.minor = 0;
-        this.patch = 0;
-        this.presplit = [];
         if (major instanceof Version) {
           this.major = major.major;
           this.minor = major.minor;
@@ -632,7 +607,7 @@
             build
           } = major);
           this.major = typeof major === 'string' ? strToNum(major) : major;
-          this.minor = (_a = typeof minor === 'string' ? strToNum(minor) : minor) !== null && _a !== void 0 ? _a : this.major === 0 ? 1 : 0;
+          this.minor = (typeof minor === 'string' ? strToNum(minor) : minor) ?? (this.major === 0 ? 1 : 0);
           this.patch = typeof patch === 'string' ? strToNum(patch) : patch;
           this.prerelease = prerelease;
           this.build = build;
@@ -654,7 +629,7 @@
           minor = typeof minor === 'string' ? strToNum(minor) : minor;
           patch = typeof patch === 'string' ? strToNum(patch) : patch;
           this.major = major;
-          this.minor = minor !== null && minor !== void 0 ? minor : major === 0 ? 1 : 0;
+          this.minor = minor ?? (major === 0 ? 1 : 0);
           this.patch = patch;
           this.prerelease = prerelease;
           this.build = build;
@@ -835,18 +810,6 @@
       }
     }
 
-    var __classPrivateFieldGet = undefined && undefined.__classPrivateFieldGet || function (receiver, state, kind, f) {
-      if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-      if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-      return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-    };
-    var __classPrivateFieldSet = undefined && undefined.__classPrivateFieldSet || function (receiver, state, value, kind, f) {
-      if (kind === "m") throw new TypeError("Private method is not writable");
-      if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-      if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-      return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
-    };
-    var _RngAbstract_seed, _RngAbstract_randFunc, _RngAbstract_shouldThrowOnMaxRecursionsReached, _RngAbstract_distributions;
     /**
      * Safeguard against huge loops. If loops unintentionally grow beyond this
      * arbitrary limit, bail out..
@@ -911,16 +874,17 @@
      * in a separate file.
      */
     class RngAbstract {
+      version = CURRENT_VERSION;
+      static version = CURRENT_VERSION;
+      #seed = 0;
+      #randFunc;
+      #shouldThrowOnMaxRecursionsReached;
+      #distributions = ['normal', 'gaussian', 'boxMuller', 'irwinHall', 'bates', 'batesgaussian', 'bernoulli', 'exponential', 'pareto', 'poisson', 'hypergeometric', 'rademacher', 'binomial', 'betaBinomial', 'beta', 'gamma', 'studentsT', 'wignerSemicircle', 'kumaraswamy', 'hermite', 'chiSquared', 'rayleigh', 'logNormal', 'cauchy', 'laplace', 'logistic'];
       constructor(seed) {
-        this.version = CURRENT_VERSION;
-        _RngAbstract_seed.set(this, 0);
-        _RngAbstract_randFunc.set(this, void 0);
-        _RngAbstract_shouldThrowOnMaxRecursionsReached.set(this, void 0);
-        _RngAbstract_distributions.set(this, ['normal', 'gaussian', 'boxMuller', 'irwinHall', 'bates', 'batesgaussian', 'bernoulli', 'exponential', 'pareto', 'poisson', 'hypergeometric', 'rademacher', 'binomial', 'betaBinomial', 'beta', 'gamma', 'studentsT', 'wignerSemicircle', 'kumaraswamy', 'hermite', 'chiSquared', 'rayleigh', 'logNormal', 'cauchy', 'laplace', 'logistic']);
         this.setSeed(seed);
       }
       getSeed() {
-        return __classPrivateFieldGet(this, _RngAbstract_seed, "f");
+        return this.#seed;
       }
       sameAs(other) {
         if (other instanceof RngAbstract) {
@@ -929,18 +893,18 @@
         return false;
       }
       randomSource(source) {
-        __classPrivateFieldSet(this, _RngAbstract_randFunc, source, "f");
+        this.#randFunc = source;
         return this;
       }
       getRandomSource() {
-        return __classPrivateFieldGet(this, _RngAbstract_randFunc, "f");
+        return this.#randFunc;
       }
       setSeed(seed) {
         if (typeof seed !== 'undefined' && seed !== null) {
           if (typeof seed === 'string') {
             seed = this.convertStringToNumber(seed);
           }
-          __classPrivateFieldSet(this, _RngAbstract_seed, seed, "f");
+          this.#seed = seed;
         } else {
           return this.setSeed(randomSeed());
         }
@@ -952,7 +916,7 @@
       }
       serialize() {
         return {
-          seed: __classPrivateFieldGet(this, _RngAbstract_seed, "f"),
+          seed: this.#seed,
           version: CURRENT_VERSION
         };
       }
@@ -961,8 +925,7 @@
        * @group Serialization
        */
       static unserialize(serialized, force = false) {
-        var _a;
-        const otherVer = new Version((_a = serialized.version) !== null && _a !== void 0 ? _a : '0.1.0');
+        const otherVer = new Version(serialized.version ?? '0.1.0');
         const minver = '0.2.0';
         if (otherVer.lt(minver) && !force) {
           throw new Error(`Trying to unserialize old RNG (v${serialized.version}) can lead to unexpected behaviour - minimum supported version for this iteration is ${minver}.
@@ -978,7 +941,7 @@
         const {
           constructor
         } = Object.getPrototypeOf(this);
-        const newSelf = new constructor(seed !== null && seed !== void 0 ? seed : PREDICTABLE_SEED);
+        const newSelf = new constructor(seed ?? PREDICTABLE_SEED);
         return newSelf;
       }
       /**
@@ -986,7 +949,7 @@
        * @group Seeding
        */
       static predictable(seed) {
-        return new this(seed !== null && seed !== void 0 ? seed : PREDICTABLE_SEED);
+        return new this(seed ?? PREDICTABLE_SEED);
       }
       hashStr(str) {
         let hash = 0;
@@ -1009,8 +972,8 @@
         return num;
       }
       _random() {
-        if (typeof __classPrivateFieldGet(this, _RngAbstract_randFunc, "f") === 'function') {
-          return __classPrivateFieldGet(this, _RngAbstract_randFunc, "f").call(this);
+        if (typeof this.#randFunc === 'function') {
+          return this.#randFunc();
         }
         return this._next();
       }
@@ -1120,11 +1083,11 @@
       }
       shouldThrowOnMaxRecursionsReached(val) {
         if (typeof val === 'boolean') {
-          __classPrivateFieldSet(this, _RngAbstract_shouldThrowOnMaxRecursionsReached, val, "f");
+          this.#shouldThrowOnMaxRecursionsReached = val;
           return this;
         }
-        if (typeof __classPrivateFieldGet(this, _RngAbstract_shouldThrowOnMaxRecursionsReached, "f") !== 'undefined') {
-          return __classPrivateFieldGet(this, _RngAbstract_shouldThrowOnMaxRecursionsReached, "f");
+        if (typeof this.#shouldThrowOnMaxRecursionsReached !== 'undefined') {
+          return this.#shouldThrowOnMaxRecursionsReached;
         }
         return THROW_ON_MAX_RECURSIONS_REACHED;
       }
@@ -1725,7 +1688,6 @@
         return map[distribution];
       }
       chancyInt(input) {
-        var _a;
         if (typeof input === 'number') {
           return Math.round(input);
         }
@@ -1742,8 +1704,10 @@
           return Math.round(choice);
         }
         if (typeof input === 'object') {
-          input = Object.assign({}, input);
-          const type = (_a = input.type) !== null && _a !== void 0 ? _a : 'random';
+          input = {
+            ...input
+          };
+          const type = input.type ?? 'random';
           if (type === 'random') {
             input.type = 'integer';
           } else if (type === 'normal') {
@@ -1753,7 +1717,6 @@
         return Math.round(this.chancy(input));
       }
       chancy(input, depth = 0) {
-        var _a, _b;
         if (depth >= MAX_RECURSIONS) {
           if (this.shouldThrowOnMaxRecursionsReached()) {
             throw new MaxRecursionsError('Max recursions reached in chancy. Usually a case of badly chosen min/max values.');
@@ -1768,8 +1731,10 @@
           return this.dice(input);
         }
         if (typeof input === 'object') {
-          input = Object.assign({}, input);
-          input.type = (_a = input.type) !== null && _a !== void 0 ? _a : 'random';
+          input = {
+            ...input
+          };
+          input.type = input.type ?? 'random';
           if (input.type === 'random' || input.type === 'int' || input.type === 'integer') {
             if (typeof input.min !== 'undefined' && typeof input.max === 'undefined') {
               input.max = Number.MAX_SAFE_INTEGER;
@@ -1785,7 +1750,7 @@
             case 'normal_int':
               return Math.round(this.normal(input));
             case 'dice':
-              return this.chancyMinMax(this.dice((_b = input.dice) !== null && _b !== void 0 ? _b : input), input, depth);
+              return this.chancyMinMax(this.dice(input.dice ?? input), input, depth);
             case 'rademacher':
               return this.chancyMinMax(this.rademacher(), input, depth);
             case 'normal':
@@ -1870,7 +1835,6 @@
        * @group Result Prediction
        */
       static chancyMin(input) {
-        var _a, _b, _c, _d, _e, _f, _g;
         if (Array.isArray(input)) {
           for (const el of input) {
             if (!isNumeric(el)) {
@@ -1886,7 +1850,7 @@
           return input;
         }
         if (typeof input === 'object') {
-          input.type = (_a = input.type) !== null && _a !== void 0 ? _a : 'random';
+          input.type = input.type ?? 'random';
           if (input.type === 'random' || input.type === 'integer') {
             if (typeof input.min !== 'undefined' && typeof input.max === 'undefined') {
               input.max = Number.MAX_SAFE_INTEGER;
@@ -1896,13 +1860,13 @@
             case 'dice':
               return this.diceMin(input.dice);
             case 'normal':
-              return (_b = input.min) !== null && _b !== void 0 ? _b : Number.NEGATIVE_INFINITY;
+              return input.min ?? Number.NEGATIVE_INFINITY;
             case 'normal_integer':
-              return (_c = input.min) !== null && _c !== void 0 ? _c : Number.NEGATIVE_INFINITY;
+              return input.min ?? Number.NEGATIVE_INFINITY;
             case 'integer':
-              return (_d = input.min) !== null && _d !== void 0 ? _d : 0;
+              return input.min ?? 0;
             case 'random':
-              return (_e = input.min) !== null && _e !== void 0 ? _e : 0;
+              return input.min ?? 0;
             case 'boxMuller':
               return Number.NEGATIVE_INFINITY;
             case 'gaussian':
@@ -1918,7 +1882,7 @@
             case 'exponential':
               return 0;
             case 'pareto':
-              return (_f = input.scale) !== null && _f !== void 0 ? _f : 1;
+              return input.scale ?? 1;
             case 'poisson':
               return 1;
             case 'hypergeometric':
@@ -1942,7 +1906,7 @@
             case 'studentsT':
               return Number.NEGATIVE_INFINITY;
             case 'wignerSemicircle':
-              return -1 * ((_g = input.R) !== null && _g !== void 0 ? _g : 10);
+              return -1 * (input.R ?? 10);
             case 'kumaraswamy':
               return Number.EPSILON;
             case 'hermite':
@@ -1969,7 +1933,6 @@
        * @group Result Prediction
        */
       static chancyMax(input) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         if (Array.isArray(input)) {
           for (const el of input) {
             if (!isNumeric(el)) {
@@ -1985,7 +1948,7 @@
           return input;
         }
         if (typeof input === 'object') {
-          input.type = (_a = input.type) !== null && _a !== void 0 ? _a : 'random';
+          input.type = input.type ?? 'random';
           if (input.type === 'random' || input.type === 'integer') {
             if (typeof input.min !== 'undefined' && typeof input.max === 'undefined') {
               input.max = Number.MAX_SAFE_INTEGER;
@@ -1995,19 +1958,19 @@
             case 'dice':
               return this.diceMax(input.dice);
             case 'normal':
-              return (_b = input.max) !== null && _b !== void 0 ? _b : Number.POSITIVE_INFINITY;
+              return input.max ?? Number.POSITIVE_INFINITY;
             case 'normal_integer':
-              return (_c = input.max) !== null && _c !== void 0 ? _c : Number.POSITIVE_INFINITY;
+              return input.max ?? Number.POSITIVE_INFINITY;
             case 'integer':
-              return (_d = input.max) !== null && _d !== void 0 ? _d : 1;
+              return input.max ?? 1;
             case 'random':
-              return (_e = input.max) !== null && _e !== void 0 ? _e : 1;
+              return input.max ?? 1;
             case 'boxMuller':
               return Number.POSITIVE_INFINITY;
             case 'gaussian':
               return Number.POSITIVE_INFINITY;
             case 'irwinHall':
-              return (_f = input.n) !== null && _f !== void 0 ? _f : 6;
+              return input.n ?? 6;
             case 'bates':
               return 1;
             case 'batesgaussian':
@@ -2030,9 +1993,9 @@
             case 'rademacher':
               return 1;
             case 'binomial':
-              return (_g = input.n) !== null && _g !== void 0 ? _g : 1;
+              return input.n ?? 1;
             case 'betaBinomial':
-              return (_h = input.n) !== null && _h !== void 0 ? _h : 1;
+              return input.n ?? 1;
             case 'beta':
               return 1;
             case 'gamma':
@@ -2040,7 +2003,7 @@
             case 'studentsT':
               return Number.POSITIVE_INFINITY;
             case 'wignerSemicircle':
-              return (_j = input.R) !== null && _j !== void 0 ? _j : 10;
+              return input.R ?? 10;
             case 'kumaraswamy':
               return 1;
             case 'hermite':
@@ -2344,8 +2307,6 @@
         return newArray;
       }
     }
-    _RngAbstract_seed = new WeakMap(), _RngAbstract_randFunc = new WeakMap(), _RngAbstract_shouldThrowOnMaxRecursionsReached = new WeakMap(), _RngAbstract_distributions = new WeakMap();
-    RngAbstract.version = CURRENT_VERSION;
     /**
      * @category Main Class
      */
@@ -2355,7 +2316,7 @@
        * @group Seeding
        */
       static predictable(seed) {
-        return new this(seed !== null && seed !== void 0 ? seed : PREDICTABLE_SEED);
+        return new this(seed ?? PREDICTABLE_SEED);
       }
       serialize() {
         return {
@@ -2497,10 +2458,10 @@
      * prng.random(); // 0.0
      */
     class PredictableRng extends RngAbstract {
+      counter = 0;
+      _results = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1 - Number.EPSILON];
       constructor(seed, results) {
         super(seed);
-        this.counter = 0;
-        this._results = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1 - Number.EPSILON];
         if (results) {
           this.results = results;
         }

@@ -41,6 +41,8 @@
   "author": "Harry Mustoe-Playfair <harry@mustoeplayfair.com>",
   "license": "MIT",
   "devDependencies": {
+    "@babel/plugin-transform-private-property-in-object": "^7.25.9",
+    "@babel/preset-env": "^7.26.0",
     "@rollup/plugin-babel": "^6.0.4",
     "@types/jest": "^29.5.13",
     "copyfiles": "^2.4.1",
