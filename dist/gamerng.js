@@ -618,7 +618,7 @@ var GameRng = (function () {
     }
   }
 
-  const CURRENT_VERSION = "0.3.0";
+  const CURRENT_VERSION = "0.3.1";
 
   // Thank you https://semver.org/
   const semverregex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
