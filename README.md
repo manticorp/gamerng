@@ -1,62 +1,89 @@
-# GameRNG - a Game Focussed RNG
+# GameRNG – a Game‑Focused RNG
 
-This is a random number generator that is:
+GameRNG is a **TypeScript-first**, game‑oriented random number generator designed to be:
 
-🏎️ highly performant  
-🌱 seedable  
-📅 serializable  
-⚡flexible input (Chancy!!)  
-⌨️ written in TypeScript
+- 🏎️ **highly performant**
+- 🌱 **seedable** and reproducible
+- 📅 **serializable** (save & restore state)
+- ⚡ **flexible in input** (via the `chancy` API)
+- ⌨️ **written in TypeScript** with rich types
 
-And more! It has been designed with **🤸‍♂️ extreme flexibility 🤸‍♂️** in mind
+It’s built with **🤸‍♂️ extreme flexibility 🤸‍♂️** in mind: from simple dice rolls to advanced probability distributions, pools, and deterministic test runs.
 
-This library is capable of generating:
+---
 
-* Uniform random numbers ```rng.random()```
-* Normal random numbers ```rng.normal({ mean: 50, stddev: 10 })```
-* Random integers ```rng.randInt()```
-* Random uniform/normal numbers/integers in a range ```rng.random(5, 10)```
-* Biased random numbers ```rng.random({ skew: -1 })```
-* Random numbers from the following distributions:
-  * Irwin-Hall
-  * Bates
-  * Bates Gaussian
-  * Bernoulli
-  * Exponential
-  * Pareto
-  * Poisson
-  * Hypergeometric
-  * Rademacher
-  * Binomial
-  * Beta-Binomial
-  * Beta
-  * Gamma
-  * Wigner Semicircle
-  * Kumaraswamy
-  * Hermite
-  * Chi-Squared
-  * Rayleigh
-  * Log-Normal
-  * Cauchy
-  * Laplace
-  * Logistic
+## Why GameRNG?
 
-It's also able to:
+JavaScript’s built‑in `Math.random()` is:
 
-* Roll dice ```rng.dice('2d6+7')```
-* Pick random items from a list ```rng.choice(['a', 5, (a) => 'foo'])```
-* Pick random items from a weighted/biased list ```rng.weightedChoice({a: 1, b: 2, c: 3})```
-* Shuffle arrays ```rng.shuffle(['a', 'b', 'c'])```
-* Be called flexibly from a single function ```rng.chancy({min: 5, max: 10}) / rng.chancy('4d10-1')```
-* Give you min/max possible results from function calls ```rng.diceMin/diceMax``` and ```rng.chancyMin/chancyMax```
+- not seedable or reproducible by default,
+- not easily serializable,
+- and has no opinionated support for game‑style constructs (dice, loot tables, encounter tables, etc.).
 
-# Installation
+GameRNG is focused on game and simulation use‑cases:
 
-Run ```npm install @manticorp/ultraloot``` or include the dist file in browser.
+- **Deterministic runs** – seed once and get the same sequence across sessions, machines, and tests.
+- **Game‑native primitives** – dice strings (e.g. `3d6+1`), weighted choices, pools without replacement.
+- **Distribution‑aware** – easily get normal, Poisson, Beta, and many other distributions without reimplementing math.
+- **Config‑driven randomness** – the `chancy` interface lets you describe randomness in JSON or data files, not scattered across code.
+- **Testable** – `PredictableRng` and `GameRng.predictable` make tests deterministic and debuggable.
 
-## Browser
+If you’re building:
 
-Download release and include ultraloot in browser:
+- roguelikes,
+- loot tables,
+- procedural levels,
+- AI behaviour with randomness,
+- or simulations with reproducibility,
+
+GameRNG is meant to be your “game‑native” RNG.
+
+---
+
+## Features at a Glance
+
+- **Core RNG**
+  - Uniform floats: `rng.random()`, `rng.random(min, max, skew?)`
+  - Uniform ints: `rng.randInt(min?, max?, skew?)`
+  - Normal/Gaussian: `rng.normal({ mean, stddev, min?, max?, skew? })`
+- **Distributions**
+  - Irwin‑Hall, Bates, Bates Gaussian
+  - Bernoulli, Exponential, Pareto, Poisson, Hypergeometric
+  - Rademacher, Binomial, Beta‑Binomial, Beta, Gamma
+  - Wigner semicircle, Kumaraswamy, Hermite
+  - Chi‑Squared, Rayleigh, Log‑Normal, Cauchy, Laplace, Logistic
+- **Game utilities**
+  - Dice: `rng.dice('2d6+7')`, `rng.diceExpanded('2d6+7')`
+  - Choice & weighted choice: `rng.choice`, `rng.weightedChoice`
+  - Shuffling: `rng.shuffle`
+  - Pools (without replacement): `rng.pool([...])`
+  - Chance helpers: `rng.chance`, `rng.chanceTo`
+- **Chancy – unified interface**
+  - `rng.chancy(...)` and `rng.chancyInt(...)` accept:
+    - numbers, dice strings, arrays, or rich config objects
+- **State & testing**
+  - Seeding with strings or numbers
+  - `GameRng.predictable` and `PredictableRng` for deterministic tests
+  - `rng.serialize()` / `GameRng.unserialize(...)`
+- **Utilities**
+  - Binning, clamping, dice parsing, scaling, unique IDs/strings
+  - Typed helpers & error types for robust validation
+
+---
+
+## Installation
+
+```bash
+npm install @manticorp/gamerng
+# or
+yarn add @manticorp/gamerng
+```
+
+Or use a prebuilt bundle in the browser.
+
+### Browser
+
+Include a UMD bundle from a CDN or from your own build:
 
 ```html
 <script src="https://unpkg.com/@manticorp/gamerng@latest/dist/gamerng.min.js"></script>
@@ -64,100 +91,300 @@ Download release and include ultraloot in browser:
 <script src="https://cdn.jsdelivr.net/npm/@manticorp/gamerng/dist/gamerng.min.js"></script>
 <!-- or -->
 <script src="https://cdn.jsdelivr.net/gh/manticorp/gamerng@latest/dist/gamerng.min.js"></script>
-<! -- or -- >
+<!-- or (self-hosted build) -->
 <script src="dist/gamerng.js"></script>
+
 <script>
   const rng = new GameRng();
   rng.random();
 </script>
 ```
 
-## Node
+### Node (CommonJS)
 
 ```ts
 const { GameRng } = require('@manticorp/gamerng');
+
+const rng = new GameRng('my_seed');
+console.log(rng.random());
 ```
 
-## ES Module
+### ES Module
 
 ```ts
 import GameRng from '@manticorp/gamerng';
+
+const rng = new GameRng(12345);
+console.log(rng.randInt(1, 6));
 ```
 
-# Usage
+---
 
-## Instantiate
+## Quick Start
+
+### Instantiate and seed
 
 ```ts
+import GameRng from '@manticorp/gamerng';
+
+// Default seed (non-deterministic)
 const rng = new GameRng();
 
-// or with a seed
-const mySeed = 'hellothere';
-const rng = new GameRng(mySeed);
+// String seed
+const rngFromString = new GameRng('hellothere');
 
-// seeds can be strings or numbers
-const rng = new GameRng(77618576514768);
+// Numeric seed
+const rngFromNumber = new GameRng(77618576514768);
 
-// you can also seed afterward
-const rng = new GameRng();
+// Seed later
 rng.seed(12345);
 
-// Or call a predictable method statically, or on an instance
+// Predictable RNG from a seed
 const rng1 = new GameRng();
 const rng2 = GameRng.predictable(12345);
 const rng3 = rng1.predictable(12345);
 
-assert(rng2.getSeed() === rng3.getSeed()); // true
+console.assert(rng2.getSeed() === rng3.getSeed()); // true
 ```
 
-## Generate a random number
+### Core random numbers
 
 ```ts
 const rng = new GameRng('my_seed');
 
-rng.random(); // A uniform random float between [0, 1)
-rng.random(0, 10); // A uniform random float between [0, 10)
-rng.randInt(0, 10); // A uniform random integer between [0, 10)
+// Uniform floats
+rng.random();        // [0, 1)
+rng.random(0, 10);   // [0, 10)
 
-rng.normal({ mean: 5, stddev: 1 }); // A normally distributed random float with a mean of 5 and a standard deviation of 1
-rng.normal({ min: 0, max: 10 }); // A normally distributed random float with a minimum value of 0 and a maximum value of 10
+// Uniform integers
+rng.randInt();       // default integer range
+rng.randInt(0, 10);  // integer between [0, 10)
 
-rng.dice('2d6+10'); // A dice roll of 2 x d6 + 10
-rng.diceExpanded('2d6+10'); // returns the following: { dice: [3, 6], plus: 10, total: 19 }
-
-rng.choice([1, 2, 3]); // A random choice from an array, e.g. 2
+// Normal / Gaussian
+rng.normal({ mean: 5, stddev: 1 });
+rng.normal({ min: 0, max: 10, skew: -1 }); // clamped + skewed
 ```
 
-## Chancy
-
-The special ```chancy``` function takes a broad range of inputs.
+### Dice and choices
 
 ```ts
-rng.chancy(5); // Always returns 5
-rng.chancy({min: 1, max: 10}); // Random number between [1, 10), e.g. 2.71828
-rng.chancy({min: 5, max: 50, type: 'integer', skew: -1}); // Random uniform integer between [5, 50] with a skew to the left / lower numbers, e.g. 10
-rng.chancy({type: 'normal', mean: 0, stddev: 1}); // Random normally distributed integer around 0 with a stddev of 1
-rng.chancy('2d10+1'); // Rolls the dice string, e.g. 17
-rng.chancy([1, 3, 5, 7, 9]); // Picks a random number from the list, e.g. 5
-rng.chancy(['a', 'b', 'c']); // Picks a random element from the list (note: this is the only way chancy will not return a number...), e.g. 'a'
+// Dice rolls
+rng.dice('2d6+10');        // e.g. 19
+rng.diceExpanded('2d6+10'); // { dice: [3, 6], plus: 10, total: 19 }
+
+// Random selection
+rng.choice([1, 2, 3]); // e.g. 2
+rng.weightedChoice({ a: 1, b: 2, c: 3 }); // c more likely than a
+rng.shuffle(['a', 'b', 'c']); // random permutation
 ```
 
-You can easily use the calling interface anywhere you might want a randomised number with highly flexible input.
+---
 
-There is also a second function called ```chancyInt``` which always returns an integer. Usually uses ```Math.round``` to round things:
+## Chancy – Flexible Random Input
+
+The special `chancy` function accepts many input forms and returns a random result that matches those semantics. This makes it easy to:
+
+- **Serialize** random behaviour into JSON config files.
+- **Explain** and tweak random behaviours without sprinkling logic everywhere.
 
 ```ts
-rng.chancyInt(5.3); // Always returns 5
-rng.chancyInt({min: 1, max: 10}); // Random number between [1, 10)
-rng.chancyInt({min: 5, max: 50, type: 'integer', skew: -1}); // Random uniform integer between [5, 50] with a skew to the left / lower numbers
-rng.chancyInt('2d10+0.5'); // e.g. 17
-rng.chancyInt([1.1, 3.3, 5.5, 7.7, 9.9]); // e.g 3 or 8
-rng.chancyInt(['a', 'b', 'c']); // Will throw an Error
+const rng = new GameRng();
+
+// Literal number
+rng.chancy(5); // always 5
+
+// Uniform range
+rng.chancy({ min: 1, max: 10 }); // float in [1, 10)
+
+// Skewed integer
+rng.chancy({ min: 5, max: 50, type: 'integer', skew: -1 });
+
+// Normal distribution
+rng.chancy({ type: 'normal', mean: 0, stddev: 1 });
+
+// Dice string
+rng.chancy('2d10+1');
+
+// From an array
+rng.chancy([1, 3, 5, 7, 9]);
+rng.chancy(['a', 'b', 'c']); // only case where chancy returns non‑numeric
 ```
 
-# Full Documentation
+There is also `chancyInt`, which guarantees an integer result:
 
-See the [full docs](https://manticorp.github.io/gamerng) for more information.
+```ts
+rng.chancyInt(5.3); // 5
+rng.chancyInt({ min: 1, max: 10 });
+rng.chancyInt('2d10+0.5');
+rng.chancyInt([1.1, 3.3, 5.5]); // rounds internally
+rng.chancyInt(['a', 'b', 'c']); // throws an Error
+```
 
-[Code docs](https://manticorp.github.io/gamerng/code)    
-[Examples](https://manticorp.github.io/gamerng/examples)
+---
+
+## Recipes
+
+Below are some common patterns you can directly lift into your game or simulation.
+
+### 1. Loot tables
+
+Define a loot table as a weighted map or object and draw loot using `weightedChoice`:
+
+```ts
+const rng = new GameRng();
+
+// Simple object-based loot table
+const loot = rng.weightedChoice({
+  'gold_coin': 50,
+  'healing_potion': 10,
+  'rare_gem': 3,
+  'legendary_sword': 1,
+});
+
+// Map-based loot table with richer payloads
+const lootTable = new Map();
+lootTable.set({ id: 'gold', min: 10, max: 100 }, 50);
+lootTable.set({ id: 'potion', type: 'healing' }, 10);
+lootTable.set({ id: 'gem', rarity: 'rare' }, 3);
+lootTable.set({ id: 'sword', rarity: 'legendary' }, 1);
+
+const drop = rng.weightedChoice(lootTable);
+```
+
+Combine with `chancy` to have quantities in data:
+
+```ts
+const lootConfig = {
+  id: 'gold',
+  amount: { min: 10, max: 100, type: 'integer' } // chancy-compatible
+};
+
+const amount = rng.chancyInt(lootConfig.amount);
+```
+
+---
+
+### 2. Encounter tables / difficulty scaling
+
+Use weighted choices to bias encounters and `normal` for soft difficulty bands:
+
+```ts
+const rng = new GameRng();
+
+const encounter = rng.weightedChoice({
+  'easy_slime': 5,
+  'goblin': 3,
+  'orc': 2,
+  'dragon': 0.1, // almost never
+});
+
+// Enemy level around playerLevel with some spread
+function enemyLevel(playerLevel: number) {
+  return Math.round(
+    rng.normal({ mean: playerLevel, stddev: 1.5, min: 1, skew: 0.2 })
+  );
+}
+```
+
+---
+
+### 3. Procedural map parameters
+
+Use distributions to generate more “natural” looking parameters:
+
+```ts
+const rng = new GameRng();
+
+function generateRoom() {
+  return {
+    width: rng.randInt(3, 10, 0.2),
+    height: rng.randInt(3, 10, 0.2),
+    treasureDensity: rng.normal({ mean: 0.2, stddev: 0.05, min: 0, max: 0.5 }),
+    enemyCount: rng.poisson({ lambda: 2 }), // via distributions API
+  };
+}
+```
+
+(See the distributions docs for the exact call signatures.)
+
+---
+
+### 4. Pools without replacement (cards, limited draws)
+
+Use `pool` when you want each element to be drawn at most once:
+
+```ts
+const rng = new GameRng();
+
+const deck = rng.pool(['AH', 'KH', 'QH', 'JH', '10H']);
+
+deck.draw(); // e.g. "QH"
+deck.drawMany(2); // e.g. ["10H", "AH"]
+deck.isEmpty();   // false/true
+
+// Refill or extend pool
+deck.push('Joker');
+```
+
+---
+
+### 5. Deterministic replays / save files
+
+Serialize the RNG together with your game state:
+
+```ts
+const rng = new GameRng('initial_seed');
+
+// ... run a bunch of game logic
+rng.random();
+rng.dice('2d6+1');
+// etc
+
+// Save
+const saveData = {
+  rng: rng.serialize(),
+  // ...your own game state
+};
+
+// Later / on another machine
+const restoredRng = GameRng.unserialize(saveData.rng);
+// restoredRng will continue where rng left off
+```
+
+---
+
+## Serialization
+
+You can serialize and restore RNG state, which is useful for:
+
+- Saving game sessions
+- Replays and deterministic debugging
+
+```ts
+const rng = new GameRng('my_seed');
+rng.random(); // advance state
+
+const serialized = rng.serialize();
+const restored = GameRng.unserialize(serialized);
+
+console.assert(rng.sameAs(restored));               // true
+console.assert(rng.random() === restored.random()); // true
+```
+
+The serialized form is a plain JavaScript object and can safely be stored as JSON.
+
+---
+
+## Documentation
+
+The README is intentionally high‑level. For full API details and more examples, see:
+
+- [Full docs](https://manticorp.github.io/gamerng)
+- [Code docs](https://manticorp.github.io/gamerng/code)
+- [Examples](https://manticorp.github.io/gamerng/examples)
+
+---
+
+## License
+
+[MIT](LICENSE)
