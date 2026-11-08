@@ -1,4 +1,4 @@
-import { weightedChoice as sampleWeightedChoice } from './sampling.js';
+import { weightedChoice as sampleWeightedChoice, gammaLog, betaSample, semicircleSample, SAMPLING_VERSION } from './sampling.js';
 import validate from './number.js';
 import Pool from './pool.js';
 import { NonRandomDetector } from './queue.js';
@@ -59,6 +59,7 @@ const randomSeed = () => {
 };
 
 export interface SerializedRng {
+  samplingVersion?: number,
   seed: number,
   version?: string,
 }
@@ -166,6 +167,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   public serialize (): any {
     return {
       seed: this.#seed,
+      samplingVersion: SAMPLING_VERSION,
       version: CURRENT_VERSION
     };
   }
@@ -611,17 +613,10 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   public betaBinomial ({ alpha = 1, beta = 1, n = 1 }: { alpha?: number, beta?: number, n?: number } = {}): number {
     validate({ alpha }).positive();
     validate({ beta }).positive();
+    if (![alpha, beta].every(Number.isFinite)) throw new Error('Beta parameters must be finite');
     validate({ n }).int().positive();
 
-    const bd = (alpha: number, beta: number): number => {
-      let x = this._random();
-      let y = this._random();
-      x = Math.pow(x, 1 / alpha);
-      y = Math.pow(y, 1 / beta);
-      return x / (x + y);
-    };
-
-    const p = bd(alpha, beta);
+    const p = this.beta({ alpha, beta });
     let k = 0;
 
     for (let i = 0; i < n; i++) {
@@ -635,22 +630,9 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   public beta ({ alpha = 0.5, beta = 0.5 }: { alpha?: number, beta?: number } = {}): number {
     validate({ alpha }).positive();
     validate({ beta }).positive();
+    if (![alpha, beta].every(Number.isFinite)) throw new Error('Beta parameters must be finite');
 
-    const gamma = (alpha: number): number => {
-      let x = 0;
-      for (let i = 0; i < alpha; i++) {
-        const r = this._random();
-        x += -Math.log(r);
-        if ((i + 1) >= LOOP_MAX) {
-          throw new Error('LOOP_MAX reached in beta - bailing out - possible parameter error, or using non-random source?');
-        }
-      }
-      return x;
-    };
-
-    const x = gamma(alpha);
-    const y = gamma(beta);
-    return x / (x + y);
+    return betaSample(() => this._random(), () => this.boxMuller(), alpha, beta);
   }
 
   public gamma ({ shape = 1, rate, scale }: { shape?: number, rate?: number, scale?: number } = {}): number {
@@ -668,50 +650,11 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     if (rate) {
       validate({ rate }).positive();
     }
-    let flg;
-    let x2;
-    let v0;
-    let v1;
-    let x;
-    let u;
-    let v = 1;
-    const d = shape - 1 / 3;
-    const c = 1.0 / Math.sqrt(9.0 * d);
-    let i = 0;
-
-    flg = true;
-    const nq1 = new NonRandomDetector(SAMERANDOM_MAX);
-
-    while (flg && i++ < LOOP_MAX) {
-      let j = 0;
-      const nq2 = new NonRandomDetector(SAMERANDOM_MAX);
-      do {
-        x = this.normal();
-        nq2.push(x);
-        nq2.detectLoop(`Loop detected in randomly generated numbers over the last ${SAMERANDOM_MAX} generations. This is incompatible with the gamma distribution. Try either using a spread of non-random numbers or fine tune the number to not fall foul ofthe looped way of generating.`);
-        v = 1.0 + (c * x);
-      } while (v <= 0.0 && j++ < LOOP_MAX);
-      if ((j + 1) >= LOOP_MAX) {
-        throw new Error(`LOOP_MAX reached inside gamma inner loop - bailing out - possible parameter error, or using non-random source? had shape = ${shape}, rate = ${rate}, scale = ${scale}`);
-      }
-
-      v *= Math.pow(v, 2);
-      x2 = Math.pow(x, 2);
-
-      v0 = 1.0 - (0.331 * x2 * x2);
-      v1 = (0.5 * x2) + (d * (1.0 - v + Math.log(v)));
-
-      u = this._random();
-      nq1.push(u);
-      nq1.detectLoop(`Loop detected in randomly generated numbers over the last ${SAMERANDOM_MAX} generations. This is incompatible with the gamma distribution. Try either using a spread of non-random numbers or fine tune the number to not fall foul of the looped way of generating. Last random number was ${u}`);
-      if (u < v0 || Math.log(u) < v1) {
-        flg = false;
-      }
+    validate({ rate }).positive();
+    if (![shape, rate].every(Number.isFinite)) {
+      throw new Error('Gamma shape and rate must be finite');
     }
-    if ((i + 1) >= LOOP_MAX) {
-      throw new Error(`LOOP_MAX reached inside gamma - bailing out - possible parameter error, or using non-random source? had shape = ${shape}, rate = ${rate}, scale = ${scale}`);
-    }
-    return rate * d * v;
+    return Math.exp(gammaLog(() => this._random(), () => this.boxMuller(), shape) - Math.log(rate));
   }
 
   public studentsT (nu: number | { nu?: number } = 1): number {
@@ -720,8 +663,8 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     }
     validate({ nu }).positive();
 
-    const normal = Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
-    const chiSquared = this.gamma({ shape: nu / 2, rate: 2 });
+    const normal = this.boxMuller();
+    const chiSquared = this.gamma({ shape: nu / 2, rate: 0.5 });
     return normal / Math.sqrt(chiSquared / nu);
   }
 
@@ -731,8 +674,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
     }
     validate({ R }).gt(0);
 
-    const theta = this._random() * 2 * Math.PI;
-    return R * Math.cos(theta);
+    return semicircleSample(() => this._random(), R);
   }
 
   public kumaraswamy ({ alpha = 0.5, beta = 0.5 }: { alpha?: number, beta?: number } = {}): number {
@@ -1408,6 +1350,7 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
   public serialize (): any {
     return {
       seed: this.getSeed(),
+      samplingVersion: SAMPLING_VERSION,
       version: CURRENT_VERSION
     };
   }
