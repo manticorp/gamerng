@@ -2,6 +2,7 @@ import Pool from './pool.js';
 import { RotRngInterface } from './rng/rot.js';
 import { DiceInterface, Distribution, Chancy, ChancyNumeric, Seed, Randfunc, RngInterface, RngDistributionsInterface } from './interface.js';
 export interface SerializedRng {
+    samplingVersion?: number;
     seed: number;
     version?: string;
 }

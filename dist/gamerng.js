@@ -40,6 +40,66 @@ var GameRng = (function () {
     return "symbol" == typeof i ? i : i + "";
   }
 
+  /** Dependency-free sampling algorithms embedded in UltraLoot at build time. */
+  const SAMPLING_VERSION = 2;
+  /** Marsaglia–Tsang sampling, with shape boosting below one, in log space. */
+  function gammaLog(random, normal, shape) {
+    if (shape < 1) {
+      return gammaLog(random, normal, shape + 1) + Math.log1p(-random()) / shape;
+    }
+    const d = shape - 1 / 3;
+    const c = 1 / (3 * Math.sqrt(d));
+    for (let attempt = 0; attempt < 10000; attempt++) {
+      const x = normal();
+      const base = 1 + c * x;
+      if (base <= 0) continue;
+      const v = base * base * base;
+      const u = random();
+      if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < x * x / 2 + d * (1 - v + Math.log(v))) {
+        return Math.log(d) + 3 * Math.log(base);
+      }
+    }
+    throw new Error('Gamma sampling could not converge; check the random source and parameters');
+  }
+  function betaSample(random, normal, alpha, beta) {
+    const difference = gammaLog(random, normal, alpha) - gammaLog(random, normal, beta);
+    if (Number.isNaN(difference)) {
+      throw new Error('Beta parameters exceed the supported numeric range');
+    }
+    // Log space avoids 0/0 when both fractional Gamma samples underflow.
+    return difference >= 0 ? 1 / (1 + Math.exp(-difference)) : Math.exp(difference) / (1 + Math.exp(difference));
+  }
+  function semicircleSample(random, radius) {
+    // The x coordinate of a uniform point in a disk has a semicircle density.
+    return radius * Math.sqrt(random()) * Math.cos(2 * Math.PI * random());
+  }
+  function weightedChoice(entries, random) {
+    let largest = 0;
+    for (const [, weight] of entries) {
+      if (!Number.isFinite(weight) || weight < 0) {
+        throw new Error('Probability weights must be finite, non-negative numbers');
+      }
+      largest = Math.max(largest, weight);
+    }
+    if (largest === 0) return null;
+    if (entries.length === 1) return entries[0][0];
+    // Scaling prevents overflow when individually finite weights have a huge sum.
+    const total = entries.reduce((sum, _ref) => {
+      let [, weight] = _ref;
+      return sum + weight / largest;
+    }, 0);
+    const target = random() * total;
+    let cumulative = 0;
+    let lastPositive = null;
+    for (const [key, weight] of entries) {
+      if (weight === 0) continue;
+      lastPositive = key;
+      cumulative += weight / largest;
+      if (target < cumulative) return key;
+    }
+    return lastPositive;
+  }
+
   function isNumeric$1(input) {
     return typeof input === 'number' || !isNaN(parseFloat(input)) && isFinite(input);
   }
@@ -976,6 +1036,7 @@ var GameRng = (function () {
     serialize() {
       return {
         seed: _classPrivateFieldGet2(_seed, this),
+        samplingVersion: SAMPLING_VERSION,
         version: CURRENT_VERSION
       };
     }
@@ -1504,17 +1565,14 @@ var GameRng = (function () {
       validate({
         beta
       }).positive();
+      if (![alpha, beta].every(Number.isFinite)) throw new Error('Beta parameters must be finite');
       validate({
         n
       }).int().positive();
-      const bd = (alpha, beta) => {
-        let x = this._random();
-        let y = this._random();
-        x = Math.pow(x, 1 / alpha);
-        y = Math.pow(y, 1 / beta);
-        return x / (x + y);
-      };
-      const p = bd(alpha, beta);
+      const p = this.beta({
+        alpha,
+        beta
+      });
       let k = 0;
       for (let i = 0; i < n; i++) {
         if (this._random() < p) {
@@ -1534,20 +1592,8 @@ var GameRng = (function () {
       validate({
         beta
       }).positive();
-      const gamma = alpha => {
-        let x = 0;
-        for (let i = 0; i < alpha; i++) {
-          const r = this._random();
-          x += -Math.log(r);
-          if (i + 1 >= LOOP_MAX) {
-            throw new Error('LOOP_MAX reached in beta - bailing out - possible parameter error, or using non-random source?');
-          }
-        }
-        return x;
-      };
-      const x = gamma(alpha);
-      const y = gamma(beta);
-      return x / (x + y);
+      if (![alpha, beta].every(Number.isFinite)) throw new Error('Beta parameters must be finite');
+      return betaSample(() => this._random(), () => this.boxMuller(), alpha, beta);
     }
     gamma() {
       let {
@@ -1575,45 +1621,13 @@ var GameRng = (function () {
           rate
         }).positive();
       }
-      let flg;
-      let x2;
-      let v0;
-      let v1;
-      let x;
-      let u;
-      let v = 1;
-      const d = shape - 1 / 3;
-      const c = 1.0 / Math.sqrt(9.0 * d);
-      let i = 0;
-      flg = true;
-      const nq1 = new NonRandomDetector(SAMERANDOM_MAX);
-      while (flg && i++ < LOOP_MAX) {
-        let j = 0;
-        const nq2 = new NonRandomDetector(SAMERANDOM_MAX);
-        do {
-          x = this.normal();
-          nq2.push(x);
-          nq2.detectLoop(`Loop detected in randomly generated numbers over the last ${SAMERANDOM_MAX} generations. This is incompatible with the gamma distribution. Try either using a spread of non-random numbers or fine tune the number to not fall foul ofthe looped way of generating.`);
-          v = 1.0 + c * x;
-        } while (v <= 0.0 && j++ < LOOP_MAX);
-        if (j + 1 >= LOOP_MAX) {
-          throw new Error(`LOOP_MAX reached inside gamma inner loop - bailing out - possible parameter error, or using non-random source? had shape = ${shape}, rate = ${rate}, scale = ${scale}`);
-        }
-        v *= Math.pow(v, 2);
-        x2 = Math.pow(x, 2);
-        v0 = 1.0 - 0.331 * x2 * x2;
-        v1 = 0.5 * x2 + d * (1.0 - v + Math.log(v));
-        u = this._random();
-        nq1.push(u);
-        nq1.detectLoop(`Loop detected in randomly generated numbers over the last ${SAMERANDOM_MAX} generations. This is incompatible with the gamma distribution. Try either using a spread of non-random numbers or fine tune the number to not fall foul of the looped way of generating. Last random number was ${u}`);
-        if (u < v0 || Math.log(u) < v1) {
-          flg = false;
-        }
+      validate({
+        rate
+      }).positive();
+      if (![shape, rate].every(Number.isFinite)) {
+        throw new Error('Gamma shape and rate must be finite');
       }
-      if (i + 1 >= LOOP_MAX) {
-        throw new Error(`LOOP_MAX reached inside gamma - bailing out - possible parameter error, or using non-random source? had shape = ${shape}, rate = ${rate}, scale = ${scale}`);
-      }
-      return rate * d * v;
+      return Math.exp(gammaLog(() => this._random(), () => this.boxMuller(), shape) - Math.log(rate));
     }
     studentsT() {
       let nu = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
@@ -1625,10 +1639,10 @@ var GameRng = (function () {
       validate({
         nu
       }).positive();
-      const normal = Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
+      const normal = this.boxMuller();
       const chiSquared = this.gamma({
         shape: nu / 2,
-        rate: 2
+        rate: 0.5
       });
       return normal / Math.sqrt(chiSquared / nu);
     }
@@ -1642,8 +1656,7 @@ var GameRng = (function () {
       validate({
         R
       }).gt(0);
-      const theta = this._random() * 2 * Math.PI;
-      return R * Math.cos(theta);
+      return semicircleSample(() => this._random(), R);
     }
     kumaraswamy() {
       let {
@@ -2147,66 +2160,13 @@ var GameRng = (function () {
       return chances;
     }
     weightedChoice(data) {
-      let total = 0;
-      let id;
       if (Array.isArray(data)) {
-        // Some shortcuts
-        if (data.length === 0) {
-          return null;
-        }
-        if (data.length === 1) {
-          return data[0];
-        }
-        const chances = this.weights(data);
-        const result = this.weightedChoice(chances);
-        chances.clear();
-        return result;
+        if (data.length === 0) return null;
+        if (data.length === 1) return data[0];
+        return this.weightedChoice(this.weights(data));
       }
-      if (data instanceof Map) {
-        // Some shortcuts
-        if (data.size === 0) {
-          return null;
-        }
-        if (data.size === 1) {
-          return data.keys().next().value;
-        }
-        data.forEach(value => {
-          total += value;
-        });
-      } else {
-        // Some shortcuts
-        const entries = Object.keys(data);
-        if (entries.length === 0) {
-          return null;
-        }
-        if (entries.length === 1) {
-          return entries[0];
-        }
-        for (id in data) {
-          if (data[id] < 0) {
-            throw new Error('Probability cannot be negative');
-          }
-          total += data[id];
-        }
-      }
-      const random = this._random() * total;
-      let part = 0;
-      if (data instanceof Map) {
-        for (const [id, value] of data) {
-          part += value;
-          if (random < part) {
-            return id;
-          }
-        }
-      } else {
-        for (id in data) {
-          part += data[id];
-          if (random < part) {
-            return id;
-          }
-        }
-      }
-      return id;
+      const entries = data instanceof Map ? Array.from(data.entries()) : Object.entries(data);
+      return weightedChoice(entries, () => this._random());
     }
     pool(entries) {
       return new Pool(entries, this);
@@ -2441,6 +2401,7 @@ var GameRng = (function () {
     serialize() {
       return {
         seed: this.getSeed(),
+        samplingVersion: SAMPLING_VERSION,
         version: CURRENT_VERSION
       };
     }

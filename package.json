@@ -2,18 +2,18 @@
   "name": "@manticorp/gamerng",
   "version": "0.3.1",
   "description": "The most powerful RNG in the world for game use - flexible, performant, seedable, serializable, reliable.",
-  "main": "./dist/gamerng.js",
+  "main": "./dist/gamerng.cjs",
   "browser": "./dist/gamerng.js",
-  "types": "./lib/index.d.ts",
+  "types": "./dist/gamerng.d.cts",
   "source": "./src/index.ts",
   "exports": {
-    "require": {
-      "default": "./dist/gamerng.cjs",
-      "types": "./lib/index.d.ts"
-    },
     "import": {
-      "default": "./lib/index.js",
-      "types": "./lib/index.d.ts"
+      "types": "./dist/gamerng.d.mts",
+      "default": "./lib/index.js"
+    },
+    "require": {
+      "types": "./dist/gamerng.d.cts",
+      "default": "./dist/gamerng.cjs"
     }
   },
   "type": "module",
@@ -24,12 +24,16 @@
     "ci": "npm t && npm run build && npx typedoc && npm run copy",
     "copy": "copyfiles -f ./dist/*.* ./docs/js",
     "prebuild": "rimraf dist && rimraf lib && rimraf docs/js && node -p \"'export const CURRENT_VERSION = ' + JSON.stringify(require('./package.json').version) + ';'\" > src/constants/libver.ts",
-    "build": "npm run build-lib && npm run build-browser && npm run build-cjs && npm run build-min",
+    "build": "npm run build-lib && npm run build-browser && npm run build-cjs && npm run build-min && npm run build-types",
     "build-lib": "npx tsc",
     "build-browser": "npx rollup -c rollup-browser.config.mjs",
     "build-cjs": "npx rollup -c rollup.config.mjs",
     "build-min": " npx google-closure-compiler --js='dist/gamerng.js' --js_output_file='dist/gamerng.min.js' --language_out=ECMASCRIPT_2016 -W QUIET",
-    "watch": "npx tsc --watch"
+    "watch": "npx tsc --watch",
+    "build-types": "rollup -c rollup-types.config.mjs",
+    "test-package": "node scripts/test-package.mjs",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test-package"
   },
   "files": [
     "LICENSE",
