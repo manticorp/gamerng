@@ -61,6 +61,8 @@ const randomSeed = () => {
 export interface SerializedRng {
   samplingVersion?: number,
   seed: number,
+  streamSeed?: number,
+  engine?: string,
   version?: string,
 }
 
@@ -92,6 +94,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   version: string = CURRENT_VERSION;
   static version: string = CURRENT_VERSION;
   #seed: number = 0;
+  #streamSeed: number = 0;
   #randFunc?: Randfunc | null;
   #shouldThrowOnMaxRecursionsReached?: boolean;
   #distributions: Distribution[] = [
@@ -154,10 +157,24 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
         seed = this.convertStringToNumber(seed);
       }
       this.#seed = seed;
+      this.#streamSeed = seed;
     } else {
       return this.setSeed(randomSeed());
     }
     return this;
+  }
+
+  /** Stable origin for named streams; advancing the generator does not change it. */
+  public getStreamSeed (): number {
+    return this.#streamSeed;
+  }
+
+  protected setStreamSeed (seed: number): void {
+    this.#streamSeed = seed;
+  }
+
+  protected setStateSeed (seed: number): void {
+    this.#seed = seed;
   }
 
   public seed (seed?: Seed): this {
@@ -168,6 +185,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   public serialize (): any {
     return {
       seed: this.#seed,
+      streamSeed: this.#streamSeed,
       samplingVersion: SAMPLING_VERSION,
       version: CURRENT_VERSION
     };
@@ -178,6 +196,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
    * @group Serialization
    */
   public static unserialize<T extends RngAbstract> (this: new (seed?: Seed) => T, serialized: SerializedRng, force = false): T {
+    if (serialized.engine && serialized.engine !== 'splitmix32-v1') throw new Error('Unsupported RNG engine');
     const otherVer = new Version(serialized.version ?? '0.1.0');
     const minver = '0.2.0';
     if (otherVer.lt(minver) && !force) {
@@ -189,6 +208,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
 
     const rng = new this(serialized.seed);
     rng.seed(serialized.seed);
+    rng.setStreamSeed(serialized.streamSeed ?? serialized.seed);
     return rng;
   }
 
@@ -1351,6 +1371,8 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
   public serialize (): any {
     return {
       seed: this.getSeed(),
+      streamSeed: this.getStreamSeed(),
+      engine: 'splitmix32-v1',
       samplingVersion: SAMPLING_VERSION,
       version: CURRENT_VERSION
     };
@@ -1366,11 +1388,18 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
 
   public from (other: Rng): this {
     this.setSeed(other.getSeed());
+    this.setStreamSeed(other.getStreamSeed());
     return this;
   }
 
+  /** Create a repeatable named child without consuming or sharing parent state. */
+  public fork (label: string): Rng {
+    if (typeof label !== 'string' || label.length === 0) throw new Error('Stream label must be a non-empty string');
+    return new Rng(JSON.stringify(['gamerng-stream-v1', this.getStreamSeed(), label]));
+  }
+
   protected _next (): number {
-    this.setSeed((this.getSeed() + 0x9e3779b9) | 0);
+    this.setStateSeed((this.getSeed() + 0x9e3779b9) | 0);
     let z = this.getSeed();
     z ^= z >>> 16;
     z = Math.imul(z, 0x21f0aaad);
@@ -1431,6 +1460,7 @@ class Rng extends RngAbstract implements RngInterface, RngDistributionsInterface
 
       setState (state: SerializedRng) {
         rng.setSeed(state.seed);
+        rng.setStreamSeed(state.streamSeed ?? state.seed);
         return this;
       },
 

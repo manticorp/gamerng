@@ -60,6 +60,7 @@ export default class RotRng extends Rng implements RotRngInterface {
 
   setState (state: SerializedRng) {
     this.setSeed(state.seed);
+    this.setStreamSeed(state.streamSeed ?? state.seed);
     return this;
   }
 
