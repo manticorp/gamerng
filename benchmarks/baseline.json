@@ -1,0 +1,28 @@
+{
+  "package": "@manticorp/gamerng",
+  "node": "v25.7.0",
+  "platform": "darwin/arm64",
+  "seed": 123,
+  "repeats": 5,
+  "checksum": 1334423.3297902043,
+  "results": {
+    "uniform": {
+      "iterations": 100000,
+      "medianMs": 10.363084,
+      "minMs": 9.724709,
+      "operationsPerSecond": 9649637
+    },
+    "weighted32": {
+      "iterations": 10000,
+      "medianMs": 8.009291,
+      "minMs": 7.668959,
+      "operationsPerSecond": 1248550
+    },
+    "gamma": {
+      "iterations": 10000,
+      "medianMs": 3.500417,
+      "minMs": 3.117292,
+      "operationsPerSecond": 2856802
+    }
+  }
+}

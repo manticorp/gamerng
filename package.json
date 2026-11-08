@@ -33,7 +33,8 @@
     "build-types": "rollup -c rollup-types.config.mjs",
     "test-package": "node scripts/test-package.mjs",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test-package"
+    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test-package",
+    "benchmark": "node benchmarks/run.mjs"
   },
   "files": [
     "LICENSE",
