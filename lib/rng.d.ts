@@ -4,6 +4,8 @@ import { DiceInterface, Distribution, Chancy, ChancyNumeric, Seed, Randfunc, Rng
 export interface SerializedRng {
     samplingVersion?: number;
     seed: number;
+    streamSeed?: number;
+    engine?: string;
     version?: string;
 }
 export declare class MaxRecursionsError extends Error {
@@ -28,6 +30,10 @@ export declare abstract class RngAbstract implements RngInterface, RngDistributi
     randomSource(source?: Randfunc | null): this;
     getRandomSource(): Randfunc | null | undefined;
     setSeed(seed?: Seed): this;
+    /** Stable origin for named streams; advancing the generator does not change it. */
+    getStreamSeed(): number;
+    protected setStreamSeed(seed: number): void;
+    protected setStateSeed(seed: number): void;
     seed(seed?: Seed): this;
     serialize(): any;
     /**
@@ -291,6 +297,8 @@ declare class Rng extends RngAbstract implements RngInterface, RngDistributionsI
     serialize(): any;
     sameAs(other: any): boolean;
     from(other: Rng): this;
+    /** Create a repeatable named child without consuming or sharing parent state. */
+    fork(label: string): Rng;
     protected _next(): number;
     /**
      * Returns an object compatible with rot.js random number generator.

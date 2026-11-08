@@ -512,6 +512,7 @@
        * @throws {@link PoolNotEnoughElementsError} if the pool does not have enough elements to draw n values
        */
       drawMany(n) {
+        if (!Number.isSafeInteger(n)) throw new Error('Draw count must be a safe integer');
         if (n < 0) {
           throw new Error('Cannot draw < 0 elements from pool');
         }
@@ -535,9 +536,10 @@
       elements = [];
       constructor(length = 1) {
         if (Array.isArray(length)) {
-          this.elements = length;
+          this.elements = [...length];
           this.size = this.elements.length;
         } else {
+          if (!Number.isSafeInteger(length) || length < 1) throw new Error('Queue size must be a positive safe integer');
           this.size = length;
         }
       }
@@ -547,7 +549,7 @@
       push(el) {
         this.elements.push(el);
         if (this.elements.length > this.size) {
-          return this.pop();
+          return this.elements.shift();
         }
         return undefined;
       }
@@ -585,7 +587,7 @@
         this.detectLoop();
         this.elements.push(el);
         if (this.elements.length > this.size) {
-          return this.pop();
+          return this.elements.shift();
         }
         return undefined;
       }
@@ -934,6 +936,7 @@
       version = CURRENT_VERSION;
       static version = CURRENT_VERSION;
       #seed = 0;
+      #streamSeed = 0;
       #randFunc;
       #shouldThrowOnMaxRecursionsReached;
       #distributions = ['normal', 'gaussian', 'boxMuller', 'irwinHall', 'bates', 'batesgaussian', 'bernoulli', 'exponential', 'pareto', 'poisson', 'hypergeometric', 'rademacher', 'binomial', 'betaBinomial', 'beta', 'gamma', 'studentsT', 'wignerSemicircle', 'kumaraswamy', 'hermite', 'chiSquared', 'rayleigh', 'logNormal', 'cauchy', 'laplace', 'logistic'];
@@ -958,14 +961,26 @@
       }
       setSeed(seed) {
         if (typeof seed !== 'undefined' && seed !== null) {
+          if (typeof seed === 'number' && !Number.isFinite(seed)) throw new Error('Seed must be finite');
           if (typeof seed === 'string') {
             seed = this.convertStringToNumber(seed);
           }
           this.#seed = seed;
+          this.#streamSeed = seed;
         } else {
           return this.setSeed(randomSeed());
         }
         return this;
+      }
+      /** Stable origin for named streams; advancing the generator does not change it. */
+      getStreamSeed() {
+        return this.#streamSeed;
+      }
+      setStreamSeed(seed) {
+        this.#streamSeed = seed;
+      }
+      setStateSeed(seed) {
+        this.#seed = seed;
       }
       seed(seed) {
         this.setSeed(seed);
@@ -974,6 +989,7 @@
       serialize() {
         return {
           seed: this.#seed,
+          streamSeed: this.#streamSeed,
           samplingVersion: SAMPLING_VERSION,
           version: CURRENT_VERSION
         };
@@ -983,6 +999,7 @@
        * @group Serialization
        */
       static unserialize(serialized, force = false) {
+        if (serialized.engine && serialized.engine !== 'splitmix32-v1') throw new Error('Unsupported RNG engine');
         const otherVer = new Version(serialized.version ?? '0.1.0');
         const minver = '0.2.0';
         if (otherVer.lt(minver) && !force) {
@@ -993,13 +1010,14 @@
         }
         const rng = new this(serialized.seed);
         rng.seed(serialized.seed);
+        rng.setStreamSeed(serialized.streamSeed ?? serialized.seed);
         return rng;
       }
       predictable(seed) {
         const {
-          constructor
+          constructor: Constructor
         } = Object.getPrototypeOf(this);
-        const newSelf = new constructor(seed ?? PREDICTABLE_SEED);
+        const newSelf = new Constructor(seed ?? PREDICTABLE_SEED);
         return newSelf;
       }
       /**
@@ -1295,7 +1313,7 @@
         }).gteq(0);
         const u = 1 - this._random(); // Converting [0,1) to (0,1]
         const v = this._random();
-        const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
         // Transform to the desired mean and standard deviation:
         return z * stddev + mean;
       }
@@ -1603,7 +1621,7 @@
         }).positive().int();
         let sum = 0;
         for (let i = 0; i < k; i++) {
-          const z = Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
+          const z = Math.sqrt(-2 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
           sum += z * z;
         }
         return sum;
@@ -1626,7 +1644,7 @@
         validate({
           stddev
         }).gt(0);
-        const normal = mean + stddev * Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
+        const normal = mean + stddev * Math.sqrt(-2 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
         return Math.exp(normal);
       }
       cauchy({
@@ -2278,6 +2296,8 @@
       serialize() {
         return {
           seed: this.getSeed(),
+          streamSeed: this.getStreamSeed(),
+          engine: 'splitmix32-v1',
           samplingVersion: SAMPLING_VERSION,
           version: CURRENT_VERSION
         };
@@ -2290,10 +2310,16 @@
       }
       from(other) {
         this.setSeed(other.getSeed());
+        this.setStreamSeed(other.getStreamSeed());
         return this;
       }
+      /** Create a repeatable named child without consuming or sharing parent state. */
+      fork(label) {
+        if (typeof label !== 'string' || label.length === 0) throw new Error('Stream label must be a non-empty string');
+        return new Rng(JSON.stringify(['gamerng-stream-v1', this.getStreamSeed(), label]));
+      }
       _next() {
-        this.setSeed(this.getSeed() + 0x9e3779b9 | 0);
+        this.setStateSeed(this.getSeed() + 0x9e3779b9 | 0);
         let z = this.getSeed();
         z ^= z >>> 16;
         z = Math.imul(z, 0x21f0aaad);
@@ -2346,6 +2372,7 @@
           },
           setState(state) {
             rng.setSeed(state.seed);
+            rng.setStreamSeed(state.streamSeed ?? state.seed);
             return this;
           },
           clone() {
@@ -2425,13 +2452,14 @@
         }
       }
       get results() {
-        return this._results;
+        return [...this._results];
       }
       set results(results) {
         if (results.length <= 0) {
           throw new Error('Must provide some fake results.');
         }
         for (const r of results) {
+          if (!Number.isFinite(r)) throw new Error('Predictable results must be finite');
           if (r < 0) {
             throw new Error(`Results must be greater than or equal to 0, got '${r}'`);
           }
@@ -2439,10 +2467,11 @@
             throw new Error(`Results must be less than 1, got '${r}'`);
           }
         }
-        this._results = results;
+        this._results = [...results];
         this.reset();
       }
       evenSpread(n) {
+        if (!Number.isSafeInteger(n) || n < 1) throw new Error('Spread size must be a positive safe integer');
         const p = [];
         for (let i = 0; i < n - 1; i++) {
           p.push(i / (n - 1));
@@ -2465,7 +2494,7 @@
         return this;
       }
       _next() {
-        return this.results[this.counter++ % this.results.length];
+        return this._results[this.counter++ % this._results.length];
       }
     }
 
@@ -2499,6 +2528,7 @@
       }
       setState(state) {
         this.setSeed(state.seed);
+        this.setStreamSeed(state.streamSeed ?? state.seed);
         return this;
       }
       clone() {
