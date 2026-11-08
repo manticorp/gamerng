@@ -393,3 +393,22 @@ The README is intentionally high‑level. For full API details and more examples
 Run `npm ci` and `npm run check` to validate the library, including packed ESM/CommonJS imports, NodeNext declarations, and the browser bundle. PR checks run on Node 22 and 24. `npm run benchmark` records repeatable local measurements after building.
 
 The uniform seeded sequence is unchanged by the sampling fixes. Gamma, Beta, Beta-binomial, Student t and Wigner outputs are corrected, so derived outcomes and RNG consumption can differ from older releases. Serialized state records the derived sampler revision in `samplingVersion`; see [CHANGELOG.md](CHANGELOG.md) for compatibility details.
+
+## Named streams
+
+```ts
+const world = new GameRng('world-01');
+const loot = world.fork('loot');
+const combat = world.fork('combat');
+const cosmetics = world.fork('cosmetics');
+cosmetics.random(); // does not advance loot, combat, or world
+loot.dice('2d6');
+```
+
+`fork(label)` creates a fresh stream at the start of that label's sequence. It does not consume the parent. Labels must be non-empty strings, are case-sensitive, and can be nested with another `fork`. Parent draw count and the order in which labels are requested do not change a stream. Keep the returned child to advance it; calling `fork('loot')` again restarts that child sequence.
+
+New saves include `streamSeed`, preserving the fork origin as well as the current uniform state. `seed()`/`setSeed()` reset that origin; save/restore, `from()`, and ROT state cloning retain it. Old saves without `streamSeed` use the saved current seed as their fork origin because the original seed is unavailable. The existing uniform engine and golden sequences are unchanged. Named streams isolate game systems; this 32-bit engine does not promise collision-free labels or cryptographic independence.
+
+Boundary tests now generate queue windows, weights, and invalid numeric inputs with fixed replayable fast-check seeds. Non-finite seeds/results and fractional pool draw counts are rejected before mutation. Predictable RNG input arrays and returned result arrays are snapshots.
+
+Release verification and npm trusted-publisher setup are documented in [SECURITY.md](SECURITY.md).
