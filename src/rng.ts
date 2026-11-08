@@ -149,6 +149,7 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
 
   public setSeed (seed?: Seed): this {
     if (typeof seed !== 'undefined' && seed !== null) {
+      if (typeof seed === 'number' && !Number.isFinite(seed)) throw new Error('Seed must be finite');
       if (typeof seed === 'string') {
         seed = this.convertStringToNumber(seed);
       }
@@ -192,8 +193,8 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   }
 
   public predictable (seed?: Seed): RngInterface {
-    const { constructor } = Object.getPrototypeOf(this);
-    const newSelf: RngInterface = new constructor(seed ?? PREDICTABLE_SEED);
+    const { constructor: Constructor } = Object.getPrototypeOf(this);
+    const newSelf: RngInterface = new Constructor(seed ?? PREDICTABLE_SEED);
     return newSelf;
   }
 
