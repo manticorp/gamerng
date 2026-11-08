@@ -41,7 +41,8 @@
     "README.md",
     "package.json",
     "./dist/",
-    "./lib/"
+    "./lib/",
+    "CHANGELOG.md"
   ],
   "funding": {
     "type": "individual",

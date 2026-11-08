@@ -158,7 +158,7 @@ rng.random(0, 10);   // [0, 10)
 
 // Uniform integers
 rng.randInt();       // default integer range
-rng.randInt(0, 10);  // integer between [0, 10)
+rng.randInt(0, 10);  // integer between [0, 10]
 
 // Normal / Gaussian
 rng.normal({ mean: 5, stddev: 1 });
@@ -388,3 +388,8 @@ The README is intentionally high‑level. For full API details and more examples
 ## License
 
 [MIT](LICENSE)
+## Development and reproducibility
+
+Run `npm ci` and `npm run check` to validate the library, including packed ESM/CommonJS imports, NodeNext declarations, and the browser bundle. PR checks run on Node 22 and 24. `npm run benchmark` records repeatable local measurements after building.
+
+The uniform seeded sequence is unchanged by the sampling fixes. Gamma, Beta, Beta-binomial, Student t and Wigner outputs are corrected, so derived outcomes and RNG consumption can differ from older releases. Serialized state records the derived sampler revision in `samplingVersion`; see [CHANGELOG.md](CHANGELOG.md) for compatibility details.
