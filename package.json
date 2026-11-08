@@ -33,9 +33,11 @@
     "build-types": "rollup -c rollup-types.config.mjs",
     "test-package": "node scripts/test-package.mjs",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test-package && npm run docs",
+    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test-package && npm run test:release && npm run docs",
     "benchmark": "node benchmarks/run.mjs",
-    "docs": "node scripts/build-docs.mjs"
+    "prepublishOnly": "node scripts/check-release.mjs",
+    "docs": "node scripts/build-docs.mjs",
+    "test:release": "node --test tests/release.test.mjs"
   },
   "files": [
     "LICENSE",
@@ -43,7 +45,8 @@
     "package.json",
     "./dist/",
     "./lib/",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "SECURITY.md"
   ],
   "funding": {
     "type": "individual",
