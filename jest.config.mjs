@@ -1,6 +1,6 @@
 export default {
   transform: {
-    '^.+\\.ts?$': 'ts-jest'
+    '^.+\\.ts?$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }]
   },
   coverageDirectory: 'coverage',
   testEnvironment: 'node',
