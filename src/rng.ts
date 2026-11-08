@@ -1,3 +1,4 @@
+import { weightedChoice as sampleWeightedChoice } from './sampling.js';
 import validate from './number.js';
 import Pool from './pool.js';
 import { NonRandomDetector } from './queue.js';
@@ -1208,69 +1209,13 @@ export abstract class RngAbstract implements RngInterface, RngDistributionsInter
   }
 
   public weightedChoice (data: Record<any, number> | Array<any> | Map<any, number>): any {
-    let total = 0; let id;
-
     if (Array.isArray(data)) {
-      // Some shortcuts
-      if (data.length === 0) {
-        return null;
-      }
-      if (data.length === 1) {
-        return data[0];
-      }
-      const chances = this.weights(data);
-      const result = this.weightedChoice(chances);
-      chances.clear();
-      return result;
+      if (data.length === 0) return null;
+      if (data.length === 1) return data[0];
+      return this.weightedChoice(this.weights(data));
     }
-
-    if (data instanceof Map) {
-      // Some shortcuts
-      if (data.size === 0) {
-        return null;
-      }
-      if (data.size === 1) {
-        return data.keys().next().value;
-      }
-      data.forEach((value) => {
-        total += value;
-      });
-    } else {
-      // Some shortcuts
-      const entries = Object.keys(data);
-      if (entries.length === 0) {
-        return null;
-      }
-      if (entries.length === 1) {
-        return entries[0];
-      }
-      for (id in data) {
-        if (data[id] < 0) {
-          throw new Error('Probability cannot be negative');
-        }
-        total += data[id];
-      }
-    }
-    const random = this._random() * total;
-
-    let part = 0;
-    if (data instanceof Map) {
-      for (const [id, value] of data) {
-        part += value;
-        if (random < part) {
-          return id;
-        }
-      }
-    } else {
-      for (id in data) {
-        part += data[id];
-        if (random < part) {
-          return id;
-        }
-      }
-    }
-
-    return id;
+    const entries = data instanceof Map ? Array.from(data.entries()) : Object.entries(data);
+    return sampleWeightedChoice(entries, () => this._random());
   }
 
   public pool<T>(entries?: T[]): Pool<T> {
