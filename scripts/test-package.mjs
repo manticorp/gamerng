@@ -15,7 +15,7 @@ const run = (command, args, cwd = directory) => execFileSync(command, args, { cw
 try {
   const packed = JSON.parse(run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', directory], root));
   await writeFile(join(directory, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
-  run('npm', ['install', '--offline', '--ignore-scripts', '--no-audit', '--no-fund', '--package-lock=false', join(directory, packed[0].filename)]);
+  run('npm', ['install', '--offline', '--no-audit', '--no-fund', '--package-lock=false', join(directory, packed[0].filename)]);
   const named = rng ? 'GameRng, PredictableRng' : 'UltraLoot, LootTable, validateTable';
   const esm = `import Main, { ${named} } from '${pkg.name}';\nconst instance = new Main(0);\nconsole.log(instance);\n`;
   const cjs = `import { ${named} } from '${pkg.name}';\nconsole.log(new ${rng ? 'GameRng' : 'UltraLoot'}(0));\n`;
@@ -64,7 +64,25 @@ try {
   vm.runInContext(await readFile(join(directory, 'node_modules', pkg.name, 'dist', browserFile), 'utf8'), browser);
   const result = vm.runInContext(rng ? 'new GameRng(0).random()' : 'new UltraLoot(0).createTable({pools:[{entries:[{id:"gold"}]}]}).rollSync()[0].id', browser);
   assert.ok(rng ? Number.isFinite(result) : result === 'gold');
-  console.log(`${pkg.name}: packed ESM/CJS runtime, NodeNext declarations, and browser bundle passed`);
+  if (rng) {
+    const probe = `(() => {
+      const rng = new GameRng('browser-parity');
+      const pool = rng.pool(['acorn', 'berry', 'mushroom']);
+      const values = [rng.random(), rng.gamma({shape: 0.2}), rng.dice('2d6+1'),
+        rng.weightedChoice({disabled: 0, enabled: 2}), rng.fork('loot').random(),
+        pool.draw(), pool.draw(), pool.draw()];
+      const restored = GameRng.unserialize(rng.serialize());
+      values.push(restored.random(), rng.random());
+      return JSON.stringify(values);
+    })()`;
+    const expected = run(process.execPath, ['-e', `const {GameRng} = require('${pkg.name}'); console.log(${probe});`]).trim();
+    for (const file of ['gamerng.js', 'gamerng.min.js']) {
+      const context = vm.createContext({});
+      vm.runInContext(await readFile(join(directory, 'node_modules', pkg.name, 'dist', file), 'utf8'), context);
+      assert.equal(vm.runInContext(probe, context), expected, `${file} must match the CommonJS seeded sequence`);
+    }
+  }
+  console.log(`${pkg.name}: packed ESM/CJS runtime, NodeNext declarations, and browser bundles passed`);
 } catch (error) {
   if (error.stdout) process.stderr.write(error.stdout);
   if (error.stderr) process.stderr.write(error.stderr);

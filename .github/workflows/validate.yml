@@ -22,7 +22,8 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      - run: npm ci --strict-peer-deps
       - run: npm run check
       - run: npm audit --audit-level=moderate
+      - run: npm audit --prefix tools/babel --audit-level=moderate
       - run: npm audit --omit=dev --audit-level=low

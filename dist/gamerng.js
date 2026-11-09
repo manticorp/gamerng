@@ -1,44 +1,13 @@
-var GameRng = (function () {
+function _defineProperty(r, t, o) { return (t = _toPropertyKey(t)) in r ? Object.defineProperty(r, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : r[t] = o, r; }
+function _toPropertyKey(r) { var o = _toPrimitive(r, "string"); return "symbol" == typeof o ? o : o + ""; }
+function _toPrimitive(t, e) { if ("object" != typeof t || !t) return t; var r; if ("undefined" != typeof Symbol && void 0 !== (r = t[Symbol.toPrimitive])) { var i = r.call(t, e || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === e ? String : Number)(t); }
+function _classPrivateFieldInitSpec(t, i, a) { _checkPrivateRedeclaration(t, i), i.set(t, a); }
+function _checkPrivateRedeclaration(e, t) { if (t.has(e)) throw new TypeError("Cannot initialize the same private elements twice on an object"); }
+function _classPrivateFieldSet(e, r, s) { return e.set(_assertClassBrand(e, r), s), s; }
+function _classPrivateFieldGet(e, r) { return e.get(_assertClassBrand(e, r)); }
+function _assertClassBrand(e, t, n) { if ("function" == typeof e ? e === t : e.has(t)) return arguments.length < 3 ? t : n; throw new TypeError("Private element is not present on this object"); }
+var GameRng = function () {
   'use strict';
-
-  function _assertClassBrand(e, t, n) {
-    if ("function" == typeof e ? e === t : e.has(t)) return arguments.length < 3 ? t : n;
-    throw new TypeError("Private element is not present on this object");
-  }
-  function _checkPrivateRedeclaration(e, t) {
-    if (t.has(e)) throw new TypeError("Cannot initialize the same private elements twice on an object");
-  }
-  function _classPrivateFieldGet2(s, a) {
-    return s.get(_assertClassBrand(s, a));
-  }
-  function _classPrivateFieldInitSpec(e, t, a) {
-    _checkPrivateRedeclaration(e, t), t.set(e, a);
-  }
-  function _classPrivateFieldSet2(s, a, r) {
-    return s.set(_assertClassBrand(s, a), r), r;
-  }
-  function _defineProperty(e, r, t) {
-    return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
-      value: t,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    }) : e[r] = t, e;
-  }
-  function _toPrimitive(t, e) {
-    if ("object" != typeof t || !t) return t;
-    var r;
-    if ("undefined" != typeof Symbol && void 0 !== (r = t[Symbol.toPrimitive])) {
-      var i = r.call(t, e);
-      if ("object" != typeof i) return i;
-      throw new TypeError("@@toPrimitive must return a primitive value.");
-    }
-    return ("string" === e ? String : Number)(t);
-  }
-  function _toPropertyKey(t) {
-    var i = _toPrimitive(t, "string");
-    return "symbol" == typeof i ? i : i + "";
-  }
 
   /** Dependency-free sampling algorithms embedded in UltraLoot at build time. */
   const SAMPLING_VERSION = 2;
@@ -96,7 +65,6 @@ var GameRng = (function () {
     }
     return lastPositive;
   }
-
   function isNumeric$1(input) {
     return typeof input === 'number' || !isNaN(parseFloat(input)) && isFinite(input);
   }
@@ -134,13 +102,13 @@ var GameRng = (function () {
       this.name = name;
     }
     get numbers() {
-      return _classPrivateFieldGet2(_numbers, this);
+      return _classPrivateFieldGet(_numbers, this);
     }
     set numbers(numbers) {
       for (const number of numbers) {
         assert(typeof number === 'number', `Non-number passed to validator ${number}`);
       }
-      _classPrivateFieldSet2(_numbers, this, numbers);
+      _classPrivateFieldSet(_numbers, this, numbers);
     }
     /**
      * Specify the numbers to validate
@@ -337,14 +305,14 @@ var GameRng = (function () {
       this.name = name;
     }
     get number() {
-      return _classPrivateFieldGet2(_number, this);
+      return _classPrivateFieldGet(_number, this);
     }
     set number(number) {
       assert(isNumeric$1(number), `Non-number passed to validator ${number}`);
       if (typeof number === 'string') {
         number = parseFloat('number');
       }
-      _classPrivateFieldSet2(_number, this, number);
+      _classPrivateFieldSet(_number, this, number);
     }
     /**
      * Returns an ArrayNumberValidator for all the numbers
@@ -501,16 +469,16 @@ var GameRng = (function () {
       return this;
     }
     getEntries() {
-      return _classPrivateFieldGet2(_entries, this);
+      return _classPrivateFieldGet(_entries, this);
     }
     set entries(entries) {
-      _classPrivateFieldSet2(_entries, this, this.copyArray(entries));
+      _classPrivateFieldSet(_entries, this, this.copyArray(entries));
     }
     get entries() {
-      return _classPrivateFieldGet2(_entries, this);
+      return _classPrivateFieldGet(_entries, this);
     }
     get length() {
-      return _classPrivateFieldGet2(_entries, this).length;
+      return _classPrivateFieldGet(_entries, this).length;
     }
     setRng(rng) {
       this.rng = rng;
@@ -520,10 +488,10 @@ var GameRng = (function () {
       return this.rng;
     }
     add(entry) {
-      _classPrivateFieldGet2(_entries, this).push(entry);
+      _classPrivateFieldGet(_entries, this).push(entry);
     }
     empty() {
-      _classPrivateFieldSet2(_entries, this, []);
+      _classPrivateFieldSet(_entries, this, []);
       return this;
     }
     isEmpty() {
@@ -539,10 +507,10 @@ var GameRng = (function () {
         throw new PoolEmptyError('No more elements left to draw from in pool.');
       }
       if (this.length === 1) {
-        return _classPrivateFieldGet2(_entries, this).splice(0, 1)[0];
+        return _classPrivateFieldGet(_entries, this).splice(0, 1)[0];
       }
-      const idx = this.rng.randInt(0, _classPrivateFieldGet2(_entries, this).length - 1);
-      return _classPrivateFieldGet2(_entries, this).splice(idx, 1)[0];
+      const idx = this.rng.randInt(0, _classPrivateFieldGet(_entries, this).length - 1);
+      return _classPrivateFieldGet(_entries, this).splice(idx, 1)[0];
     }
     /**
      * Draw n elements from the pool, without replacement.
@@ -563,13 +531,12 @@ var GameRng = (function () {
       }
       const result = [];
       for (let i = 0; i < n; i++) {
-        const idx = this.rng.randInt(0, _classPrivateFieldGet2(_entries, this).length - 1);
-        result.push(_classPrivateFieldGet2(_entries, this).splice(idx, 1)[0]);
+        const idx = this.rng.randInt(0, _classPrivateFieldGet(_entries, this).length - 1);
+        result.push(_classPrivateFieldGet(_entries, this).splice(idx, 1)[0]);
       }
       return result;
     }
   }
-
   class Dequeue {
     constructor(length = 1) {
       _defineProperty(this, "size", void 0);
@@ -665,7 +632,6 @@ var GameRng = (function () {
       return false;
     }
   }
-
   const CURRENT_VERSION = "0.3.1";
 
   // Thank you https://semver.org/
@@ -986,7 +952,7 @@ var GameRng = (function () {
       this.setSeed(seed);
     }
     getSeed() {
-      return _classPrivateFieldGet2(_seed, this);
+      return _classPrivateFieldGet(_seed, this);
     }
     sameAs(other) {
       if (other instanceof RngAbstract) {
@@ -995,11 +961,11 @@ var GameRng = (function () {
       return false;
     }
     randomSource(source) {
-      _classPrivateFieldSet2(_randFunc, this, source);
+      _classPrivateFieldSet(_randFunc, this, source);
       return this;
     }
     getRandomSource() {
-      return _classPrivateFieldGet2(_randFunc, this);
+      return _classPrivateFieldGet(_randFunc, this);
     }
     setSeed(seed) {
       if (typeof seed !== 'undefined' && seed !== null) {
@@ -1007,8 +973,8 @@ var GameRng = (function () {
         if (typeof seed === 'string') {
           seed = this.convertStringToNumber(seed);
         }
-        _classPrivateFieldSet2(_seed, this, seed);
-        _classPrivateFieldSet2(_streamSeed, this, seed);
+        _classPrivateFieldSet(_seed, this, seed);
+        _classPrivateFieldSet(_streamSeed, this, seed);
       } else {
         return this.setSeed(randomSeed());
       }
@@ -1016,13 +982,13 @@ var GameRng = (function () {
     }
     /** Stable origin for named streams; advancing the generator does not change it. */
     getStreamSeed() {
-      return _classPrivateFieldGet2(_streamSeed, this);
+      return _classPrivateFieldGet(_streamSeed, this);
     }
     setStreamSeed(seed) {
-      _classPrivateFieldSet2(_streamSeed, this, seed);
+      _classPrivateFieldSet(_streamSeed, this, seed);
     }
     setStateSeed(seed) {
-      _classPrivateFieldSet2(_seed, this, seed);
+      _classPrivateFieldSet(_seed, this, seed);
     }
     seed(seed) {
       this.setSeed(seed);
@@ -1030,8 +996,8 @@ var GameRng = (function () {
     }
     serialize() {
       return {
-        seed: _classPrivateFieldGet2(_seed, this),
-        streamSeed: _classPrivateFieldGet2(_streamSeed, this),
+        seed: _classPrivateFieldGet(_seed, this),
+        streamSeed: _classPrivateFieldGet(_streamSeed, this),
         samplingVersion: SAMPLING_VERSION,
         version: CURRENT_VERSION
       };
@@ -1090,8 +1056,8 @@ var GameRng = (function () {
       return num;
     }
     _random() {
-      if (typeof _classPrivateFieldGet2(_randFunc, this) === 'function') {
-        return _classPrivateFieldGet2(_randFunc, this).call(this);
+      if (typeof _classPrivateFieldGet(_randFunc, this) === 'function') {
+        return _classPrivateFieldGet(_randFunc, this).call(this);
       }
       return this._next();
     }
@@ -1201,11 +1167,11 @@ var GameRng = (function () {
     }
     shouldThrowOnMaxRecursionsReached(val) {
       if (typeof val === 'boolean') {
-        _classPrivateFieldSet2(_shouldThrowOnMaxRecursionsReached, this, val);
+        _classPrivateFieldSet(_shouldThrowOnMaxRecursionsReached, this, val);
         return this;
       }
-      if (typeof _classPrivateFieldGet2(_shouldThrowOnMaxRecursionsReached, this) !== 'undefined') {
-        return _classPrivateFieldGet2(_shouldThrowOnMaxRecursionsReached, this);
+      if (typeof _classPrivateFieldGet(_shouldThrowOnMaxRecursionsReached, this) !== 'undefined') {
+        return _classPrivateFieldGet(_shouldThrowOnMaxRecursionsReached, this);
       }
       return THROW_ON_MAX_RECURSIONS_REACHED;
     }
@@ -1252,12 +1218,12 @@ var GameRng = (function () {
       }
       if (depth > MAX_RECURSIONS && this.shouldThrowOnMaxRecursionsReached()) {
         throw new MaxRecursionsError(`Max recursive calls to rng normal function. This might be as a result of using predictable random numbers, or inappropriate arguments? Args: ${JSON.stringify({
-        mean,
-        stddev,
-        max,
-        min,
-        skew
-      })}`);
+          mean,
+          stddev,
+          max,
+          min,
+          skew
+        })}`);
       }
       let num = this.bates(7);
       if (skew < 0) {
@@ -2425,7 +2391,5 @@ var GameRng = (function () {
       };
     }
   }
-
   return Rng;
-
-})();
+}();
