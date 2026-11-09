@@ -22,3 +22,7 @@ Before the first release, a package maintainer must configure the npm trusted pu
 Create/configure the matching GitHub `npm` environment and its desired reviewer protection. A new npm trusted-publisher connection currently expires if its first publish is not completed within two days, so configure it when the release is ready. See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/).
 
 Then bump the package and lockfile version in a reviewed PR, merge it, tag the merged commit as `v<version>`, and publish a GitHub release. The workflow can also be dispatched for that existing tag. Publishing is not triggered by PRs or ordinary branch pushes.
+
+## Isolated browser compiler
+
+Babel 8 browser compilation lives in the private `tools/babel` package with its own lockfile, while the root Jest/CommonJS tools retain Babel 7. Both installs enforce peer compatibility. CI audits both dependency graphs; the isolated compiler has no known advisories as of 9 November 2026. These build tools are excluded from the published library and do not add runtime dependencies or package-install hooks.

@@ -1,6 +1,6 @@
 # Contributing to GameRng
 
-GameRng is written in [TypeScript](https://www.typescriptlang.org/) and packed with [webpack](https://webpack.js.org/).
+GameRng is written in [TypeScript](https://www.typescriptlang.org/) and packed with [Rollup](https://rollupjs.org/).
 
 ## Code Style
 
@@ -73,3 +73,10 @@ Please make all code contributions as pull requests.
 All tests should be passing before submitting the PR.
 
 If this becomes an issue I will set up an automated tests thing.
+## Browser compiler dependencies
+
+Use Node 24.11 or newer (Node 22.18 is also supported) for development builds. The browser compiler uses Babel 8 in `tools/babel`, with its own package lock. Jest and the CommonJS Rollup adapter retain their compatible Babel 7 dependencies in the root install. See the [Babel 8 migration guide](https://babeljs.io/docs/v8-migration).
+
+`npm ci --strict-peer-deps` installs the root tools. `npm run build` installs the locked browser compiler automatically through `prebuild-browser`; `npm run check` also runs its private-field regression fixture and compares both browser bundles with the packed CommonJS seeded results. For standalone compiler fixture checks, run `npm run tools:install` before `npm run test:browser-build`. Published package installs do not run this build setup.
+
+CI validates both dependency graphs and audits `tools/babel` separately. Dependabot groups the isolated Babel dependencies so future major upgrades are proposed together.
