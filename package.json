@@ -33,11 +33,12 @@
     "build-types": "rollup -c rollup-types.config.mjs",
     "test-package": "node scripts/test-package.mjs",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test-package && npm run test:release && npm run docs",
+    "check": "npm run typecheck && npm test -- --runInBand && npm run build && npm run test:browser-build && npm run test-package && npm run test:release && npm run docs",
     "benchmark": "node benchmarks/run.mjs",
     "prepublishOnly": "node scripts/check-release.mjs",
     "docs": "node scripts/build-docs.mjs",
     "test:release": "node --test tests/release.test.mjs",
+    "test:browser-build": "node --test tests/browser-build.test.mjs",
     "tools:install": "npm ci --prefix tools/babel --ignore-scripts --strict-peer-deps",
     "prebuild-browser": "npm run tools:install"
   },
