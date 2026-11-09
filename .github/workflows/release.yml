@@ -35,8 +35,9 @@ jobs:
         run: git merge-base --is-ancestor HEAD origin/main
       - run: npm install --global npm@11
       - run: node scripts/check-release.mjs
-      - run: npm ci
+      - run: npm ci --strict-peer-deps
       - run: npm run check
       - run: npm audit --audit-level=moderate
+      - run: npm audit --prefix tools/babel --audit-level=moderate
       - run: |
           npm publish --access public --provenance --tag "$(node -p 'require("./package.json").version.includes("-") ? "next" : "latest"')"
