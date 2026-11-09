@@ -1,0 +1,15 @@
+{
+  "name": "gamerng-browser-compiler",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0"
+  },
+  "dependencies": {
+    "@babel/core": "^8.1.0",
+    "@babel/plugin-transform-class-properties": "^8.0.1",
+    "@babel/plugin-transform-private-methods": "^8.0.1",
+    "@babel/plugin-transform-private-property-in-object": "^8.0.5",
+    "@babel/preset-env": "^8.0.7"
+  }
+}
