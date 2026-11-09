@@ -20,24 +20,81 @@ var GameRng = (function () {
   function _defineProperty(e, r, t) {
     return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
       value: t,
-      enumerable: !0,
-      configurable: !0,
-      writable: !0
+      enumerable: true,
+      configurable: true,
+      writable: true
     }) : e[r] = t, e;
   }
-  function _toPrimitive(t, r) {
+  function _toPrimitive(t, e) {
     if ("object" != typeof t || !t) return t;
-    var e = t[Symbol.toPrimitive];
-    if (void 0 !== e) {
-      var i = e.call(t, r || "default");
+    var r;
+    if ("undefined" != typeof Symbol && void 0 !== (r = t[Symbol.toPrimitive])) {
+      var i = r.call(t, e);
       if ("object" != typeof i) return i;
       throw new TypeError("@@toPrimitive must return a primitive value.");
     }
-    return ("string" === r ? String : Number)(t);
+    return ("string" === e ? String : Number)(t);
   }
   function _toPropertyKey(t) {
     var i = _toPrimitive(t, "string");
     return "symbol" == typeof i ? i : i + "";
+  }
+
+  /** Dependency-free sampling algorithms embedded in UltraLoot at build time. */
+  const SAMPLING_VERSION = 2;
+  /** Marsaglia–Tsang sampling, with shape boosting below one, in log space. */
+  function gammaLog(random, normal, shape) {
+    if (shape < 1) {
+      return gammaLog(random, normal, shape + 1) + Math.log1p(-random()) / shape;
+    }
+    const d = shape - 1 / 3;
+    const c = 1 / (3 * Math.sqrt(d));
+    for (let attempt = 0; attempt < 10000; attempt++) {
+      const x = normal();
+      const base = 1 + c * x;
+      if (base <= 0) continue;
+      const v = base * base * base;
+      const u = random();
+      if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < x * x / 2 + d * (1 - v + Math.log(v))) {
+        return Math.log(d) + 3 * Math.log(base);
+      }
+    }
+    throw new Error('Gamma sampling could not converge; check the random source and parameters');
+  }
+  function betaSample(random, normal, alpha, beta) {
+    const difference = gammaLog(random, normal, alpha) - gammaLog(random, normal, beta);
+    if (Number.isNaN(difference)) {
+      throw new Error('Beta parameters exceed the supported numeric range');
+    }
+    // Log space avoids 0/0 when both fractional Gamma samples underflow.
+    return difference >= 0 ? 1 / (1 + Math.exp(-difference)) : Math.exp(difference) / (1 + Math.exp(difference));
+  }
+  function semicircleSample(random, radius) {
+    // The x coordinate of a uniform point in a disk has a semicircle density.
+    return radius * Math.sqrt(random()) * Math.cos(2 * Math.PI * random());
+  }
+  function weightedChoice(entries, random) {
+    let largest = 0;
+    for (const [, weight] of entries) {
+      if (!Number.isFinite(weight) || weight < 0) {
+        throw new Error('Probability weights must be finite, non-negative numbers');
+      }
+      largest = Math.max(largest, weight);
+    }
+    if (largest === 0) return null;
+    if (entries.length === 1) return entries[0][0];
+    // Scaling prevents overflow when individually finite weights have a huge sum.
+    const total = entries.reduce((sum, [, weight]) => sum + weight / largest, 0);
+    const target = random() * total;
+    let cumulative = 0;
+    let lastPositive = null;
+    for (const [key, weight] of entries) {
+      if (weight === 0) continue;
+      lastPositive = key;
+      cumulative += weight / largest;
+      if (target < cumulative) return key;
+    }
+    return lastPositive;
   }
 
   function isNumeric$1(input) {
@@ -50,8 +107,7 @@ var GameRng = (function () {
   /**
    * @category Number Validator
    */
-  const assert = function (truthy) {
-    let msg = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'Assertion failed';
+  const assert = (truthy, msg = 'Assertion failed') => {
     if (!truthy) {
       throw new NumberValidationError(msg);
     }
@@ -65,8 +121,7 @@ var GameRng = (function () {
    */
   var _numbers = /*#__PURE__*/new WeakMap();
   class ArrayNumberValidator {
-    constructor(numbers) {
-      let name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'numbers';
+    constructor(numbers, name = 'numbers') {
       /**
        * The numbers to be validated
        */
@@ -129,9 +184,7 @@ var GameRng = (function () {
      * @param msg Error message
      * @throws {@link NumberValidationError} If they do not sum close to the correct amount
      */
-    sumcloseto(sum) {
-      let diff = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.0001;
-      let msg = arguments.length > 2 ? arguments[2] : undefined;
+    sumcloseto(sum, diff = 0.0001, msg) {
       assert(Math.abs(this.sum() - sum) < diff, msg ?? `Expected sum of ${this.name} to be within ${diff} of ${sum}, got ${this.sum()}`);
       return this;
     }
@@ -268,9 +321,7 @@ var GameRng = (function () {
    */
   var _number = /*#__PURE__*/new WeakMap();
   class NumberValidator {
-    constructor() {
-      let number = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      let name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'number';
+    constructor(number = 0, name = 'number') {
       /**
        * The number being tested.
        */
@@ -432,9 +483,7 @@ var GameRng = (function () {
    */
   var _entries = /*#__PURE__*/new WeakMap();
   class Pool {
-    constructor() {
-      let entries = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
-      let rng = arguments.length > 1 ? arguments[1] : undefined;
+    constructor(entries = [], rng) {
       _defineProperty(this, "rng", void 0);
       _classPrivateFieldInitSpec(this, _entries, []);
       this.entries = entries;
@@ -502,6 +551,7 @@ var GameRng = (function () {
      * @throws {@link PoolNotEnoughElementsError} if the pool does not have enough elements to draw n values
      */
     drawMany(n) {
+      if (!Number.isSafeInteger(n)) throw new Error('Draw count must be a safe integer');
       if (n < 0) {
         throw new Error('Cannot draw < 0 elements from pool');
       }
@@ -521,14 +571,14 @@ var GameRng = (function () {
   }
 
   class Dequeue {
-    constructor() {
-      let length = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    constructor(length = 1) {
       _defineProperty(this, "size", void 0);
       _defineProperty(this, "elements", []);
       if (Array.isArray(length)) {
-        this.elements = length;
+        this.elements = [...length];
         this.size = this.elements.length;
       } else {
+        if (!Number.isSafeInteger(length) || length < 1) throw new Error('Queue size must be a positive safe integer');
         this.size = length;
       }
     }
@@ -538,7 +588,7 @@ var GameRng = (function () {
     push(el) {
       this.elements.push(el);
       if (this.elements.length > this.size) {
-        return this.pop();
+        return this.elements.shift();
       }
       return undefined;
     }
@@ -563,9 +613,7 @@ var GameRng = (function () {
   }
   class LoopDetectedError extends Error {}
   class NonRandomDetector extends Dequeue {
-    constructor() {
-      let length = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-      let minsequencelength = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
+    constructor(length = 1, minsequencelength = 2) {
       super(length);
       _defineProperty(this, "minsequencelength", 2);
       _defineProperty(this, "errormessage", 'Loop detected in input data. Randomness source not random?');
@@ -578,7 +626,7 @@ var GameRng = (function () {
       this.detectLoop();
       this.elements.push(el);
       if (this.elements.length > this.size) {
-        return this.pop();
+        return this.elements.shift();
       }
       return undefined;
     }
@@ -636,10 +684,7 @@ var GameRng = (function () {
     return 1;
   };
   class Version {
-    constructor(major, minor) {
-      let patch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-      let prerelease = arguments.length > 3 ? arguments[3] : undefined;
-      let build = arguments.length > 4 ? arguments[4] : undefined;
+    constructor(major, minor, patch = 0, prerelease, build) {
       _defineProperty(this, "major", 0);
       _defineProperty(this, "minor", 0);
       _defineProperty(this, "patch", 0);
@@ -883,8 +928,7 @@ var GameRng = (function () {
   const diceCache = {};
   let monotonic = 0;
   let lastuniqid = 0;
-  function uniqid() {
-    let prefix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+  function uniqid(prefix = '') {
     const now = Date.now() * 1000;
     if (lastuniqid === now) {
       monotonic++;
@@ -909,12 +953,9 @@ var GameRng = (function () {
     return now * 1000000 + mono;
   };
   class MaxRecursionsError extends Error {}
-  function sum(numbersFirstArg) {
+  function sum(numbersFirstArg, ...numbers) {
     if (Array.isArray(numbersFirstArg)) {
       return numbersFirstArg.reduce((a, b) => a + b, 0);
-    }
-    for (var _len = arguments.length, numbers = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-      numbers[_key - 1] = arguments[_key];
     }
     return numbers.reduce((a, b) => a + b, 0);
   }
@@ -930,6 +971,7 @@ var GameRng = (function () {
    * in a separate file.
    */
   var _seed = /*#__PURE__*/new WeakMap();
+  var _streamSeed = /*#__PURE__*/new WeakMap();
   var _randFunc = /*#__PURE__*/new WeakMap();
   var _shouldThrowOnMaxRecursionsReached = /*#__PURE__*/new WeakMap();
   var _distributions = /*#__PURE__*/new WeakMap();
@@ -937,6 +979,7 @@ var GameRng = (function () {
     constructor(seed) {
       _defineProperty(this, "version", CURRENT_VERSION);
       _classPrivateFieldInitSpec(this, _seed, 0);
+      _classPrivateFieldInitSpec(this, _streamSeed, 0);
       _classPrivateFieldInitSpec(this, _randFunc, void 0);
       _classPrivateFieldInitSpec(this, _shouldThrowOnMaxRecursionsReached, void 0);
       _classPrivateFieldInitSpec(this, _distributions, ['normal', 'gaussian', 'boxMuller', 'irwinHall', 'bates', 'batesgaussian', 'bernoulli', 'exponential', 'pareto', 'poisson', 'hypergeometric', 'rademacher', 'binomial', 'betaBinomial', 'beta', 'gamma', 'studentsT', 'wignerSemicircle', 'kumaraswamy', 'hermite', 'chiSquared', 'rayleigh', 'logNormal', 'cauchy', 'laplace', 'logistic']);
@@ -960,14 +1003,26 @@ var GameRng = (function () {
     }
     setSeed(seed) {
       if (typeof seed !== 'undefined' && seed !== null) {
+        if (typeof seed === 'number' && !Number.isFinite(seed)) throw new Error('Seed must be finite');
         if (typeof seed === 'string') {
           seed = this.convertStringToNumber(seed);
         }
         _classPrivateFieldSet2(_seed, this, seed);
+        _classPrivateFieldSet2(_streamSeed, this, seed);
       } else {
         return this.setSeed(randomSeed());
       }
       return this;
+    }
+    /** Stable origin for named streams; advancing the generator does not change it. */
+    getStreamSeed() {
+      return _classPrivateFieldGet2(_streamSeed, this);
+    }
+    setStreamSeed(seed) {
+      _classPrivateFieldSet2(_streamSeed, this, seed);
+    }
+    setStateSeed(seed) {
+      _classPrivateFieldSet2(_seed, this, seed);
     }
     seed(seed) {
       this.setSeed(seed);
@@ -976,6 +1031,8 @@ var GameRng = (function () {
     serialize() {
       return {
         seed: _classPrivateFieldGet2(_seed, this),
+        streamSeed: _classPrivateFieldGet2(_streamSeed, this),
+        samplingVersion: SAMPLING_VERSION,
         version: CURRENT_VERSION
       };
     }
@@ -983,8 +1040,8 @@ var GameRng = (function () {
      * {@inheritDoc RngConstructor.unserialize}
      * @group Serialization
      */
-    static unserialize(serialized) {
-      let force = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    static unserialize(serialized, force = false) {
+      if (serialized.engine && serialized.engine !== 'splitmix32-v1') throw new Error('Unsupported RNG engine');
       const otherVer = new Version(serialized.version ?? '0.1.0');
       const minver = '0.2.0';
       if (otherVer.lt(minver) && !force) {
@@ -995,13 +1052,14 @@ var GameRng = (function () {
       }
       const rng = new this(serialized.seed);
       rng.seed(serialized.seed);
+      rng.setStreamSeed(serialized.streamSeed ?? serialized.seed);
       return rng;
     }
     predictable(seed) {
       const {
-        constructor
+        constructor: Constructor
       } = Object.getPrototypeOf(this);
-      const newSelf = new constructor(seed ?? PREDICTABLE_SEED);
+      const newSelf = new Constructor(seed ?? PREDICTABLE_SEED);
       return newSelf;
     }
     /**
@@ -1043,14 +1101,10 @@ var GameRng = (function () {
     probability() {
       return this.randBetween(0, 1);
     }
-    random() {
-      let from = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      let to = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-      let skew = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    random(from = 0, to = 1, skew = 0) {
       return this.randBetween(from, to, skew);
     }
-    chance(n) {
-      let chanceIn = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+    chance(n, chanceIn = 1) {
       validate({
         chanceIn
       }).positive();
@@ -1064,10 +1118,7 @@ var GameRng = (function () {
     chanceTo(from, to) {
       return this.chance(from, from + to);
     }
-    randInt() {
-      let from = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      let to = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-      let skew = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    randInt(from = 0, to = 1, skew = 0) {
       if (typeof from === 'object') {
         ({
           from = 0,
@@ -1093,16 +1144,13 @@ var GameRng = (function () {
       }
       return Math.floor(rand * (to + 1 - from)) + from;
     }
-    uniqid() {
-      let prefix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+    uniqid(prefix = '') {
       return uniqid(prefix);
     }
-    static uniqid() {
-      let prefix = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : '';
+    static uniqid(prefix = '') {
       return uniqid(prefix);
     }
-    randomString() {
-      let len = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 6;
+    randomString(len = 6) {
       validate({
         len
       }).gt(0);
@@ -1114,10 +1162,7 @@ var GameRng = (function () {
       }
       return str.join('');
     }
-    randBetween() {
-      let from = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      let to = arguments.length > 1 ? arguments[1] : undefined;
-      let skew = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    randBetween(from = 0, to, skew = 0) {
       if (typeof from === 'object') {
         ({
           from = 0,
@@ -1137,9 +1182,7 @@ var GameRng = (function () {
       }
       return this.scaleNorm(rand, from, to);
     }
-    scale(number, from, to) {
-      let min = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-      let max = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 1;
+    scale(number, from, to, min = 0, max = 1) {
       validate({
         number
       }).lteq(max);
@@ -1193,15 +1236,13 @@ var GameRng = (function () {
      * @throws {@link NumberValidationError} If the input parameters are not valid.
      * @throws {@link MaxRecursionsError} If the function recurses too many times in trying to generate in bounds numbers
      */
-    normal() {
-      let {
-        mean,
-        stddev,
-        max,
-        min,
-        skew = 0
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-      let depth = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    normal({
+      mean,
+      stddev,
+      max,
+      min,
+      skew = 0
+    } = {}, depth = 0) {
       if (typeof min === 'undefined' && typeof max === 'undefined') {
         return this.gaussian({
           mean,
@@ -1273,12 +1314,11 @@ var GameRng = (function () {
       }
       return num;
     }
-    gaussian() {
-      let {
-        mean = 0,
-        stddev = 1,
-        skew = 0
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    gaussian({
+      mean = 0,
+      stddev = 1,
+      skew = 0
+    } = {}) {
       validate({
         stddev
       }).positive();
@@ -1303,9 +1343,7 @@ var GameRng = (function () {
       num = num * stddev + mean;
       return num;
     }
-    boxMuller() {
-      let mean = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-      let stddev = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+    boxMuller(mean = 0, stddev = 1) {
       if (typeof mean === 'object') {
         ({
           mean = 0,
@@ -1317,12 +1355,11 @@ var GameRng = (function () {
       }).gteq(0);
       const u = 1 - this._random(); // Converting [0,1) to (0,1]
       const v = this._random();
-      const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
       // Transform to the desired mean and standard deviation:
       return z * stddev + mean;
     }
-    irwinHall() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 6;
+    irwinHall(n = 6) {
       if (typeof n === 'object') {
         ({
           n = 6
@@ -1337,8 +1374,7 @@ var GameRng = (function () {
       }
       return sum;
     }
-    bates() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 6;
+    bates(n = 6) {
       if (typeof n === 'object') {
         ({
           n = 6
@@ -1351,8 +1387,7 @@ var GameRng = (function () {
         n
       }) / n;
     }
-    batesgaussian() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 6;
+    batesgaussian(n = 6) {
       if (typeof n === 'object') {
         ({
           n = 6
@@ -1365,8 +1400,7 @@ var GameRng = (function () {
         n
       }) / Math.sqrt(n) - 1 / Math.sqrt(1 / n) / 2;
     }
-    bernoulli() {
-      let p = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0.5;
+    bernoulli(p = 0.5) {
       if (typeof p === 'object') {
         ({
           p = 0.5
@@ -1377,8 +1411,7 @@ var GameRng = (function () {
       }).lteq(1).gteq(0);
       return this._random() < p ? 1 : 0;
     }
-    exponential() {
-      let rate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    exponential(rate = 1) {
       if (typeof rate === 'object') {
         ({
           rate = 1
@@ -1389,12 +1422,11 @@ var GameRng = (function () {
       }).gt(0);
       return -Math.log(1 - this._random()) / rate;
     }
-    pareto() {
-      let {
-        shape = 0.5,
-        scale = 1,
-        location = 0
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    pareto({
+      shape = 0.5,
+      scale = 1,
+      location = 0
+    } = {}) {
       validate({
         shape
       }).gteq(0);
@@ -1408,8 +1440,7 @@ var GameRng = (function () {
         return location - scale * Math.log(u);
       }
     }
-    poisson() {
-      let lambda = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    poisson(lambda = 1) {
       if (typeof lambda === 'object') {
         ({
           lambda = 1
@@ -1435,13 +1466,12 @@ var GameRng = (function () {
       }
       return k - 1;
     }
-    hypergeometric() {
-      let {
-        N = 50,
-        K = 10,
-        n = 5,
-        k
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    hypergeometric({
+      N = 50,
+      K = 10,
+      n = 5,
+      k
+    } = {}) {
       validate({
         N
       }).int().positive();
@@ -1473,11 +1503,10 @@ var GameRng = (function () {
     rademacher() {
       return this._random() < 0.5 ? -1 : 1;
     }
-    binomial() {
-      let {
-        n = 1,
-        p = 0.5
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    binomial({
+      n = 1,
+      p = 0.5
+    } = {}) {
       validate({
         n
       }).int().positive();
@@ -1492,29 +1521,25 @@ var GameRng = (function () {
       }
       return successes;
     }
-    betaBinomial() {
-      let {
-        alpha = 1,
-        beta = 1,
-        n = 1
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    betaBinomial({
+      alpha = 1,
+      beta = 1,
+      n = 1
+    } = {}) {
       validate({
         alpha
       }).positive();
       validate({
         beta
       }).positive();
+      if (![alpha, beta].every(Number.isFinite)) throw new Error('Beta parameters must be finite');
       validate({
         n
       }).int().positive();
-      const bd = (alpha, beta) => {
-        let x = this._random();
-        let y = this._random();
-        x = Math.pow(x, 1 / alpha);
-        y = Math.pow(y, 1 / beta);
-        return x / (x + y);
-      };
-      const p = bd(alpha, beta);
+      const p = this.beta({
+        alpha,
+        beta
+      });
       let k = 0;
       for (let i = 0; i < n; i++) {
         if (this._random() < p) {
@@ -1523,38 +1548,24 @@ var GameRng = (function () {
       }
       return k;
     }
-    beta() {
-      let {
-        alpha = 0.5,
-        beta = 0.5
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    beta({
+      alpha = 0.5,
+      beta = 0.5
+    } = {}) {
       validate({
         alpha
       }).positive();
       validate({
         beta
       }).positive();
-      const gamma = alpha => {
-        let x = 0;
-        for (let i = 0; i < alpha; i++) {
-          const r = this._random();
-          x += -Math.log(r);
-          if (i + 1 >= LOOP_MAX) {
-            throw new Error('LOOP_MAX reached in beta - bailing out - possible parameter error, or using non-random source?');
-          }
-        }
-        return x;
-      };
-      const x = gamma(alpha);
-      const y = gamma(beta);
-      return x / (x + y);
+      if (![alpha, beta].every(Number.isFinite)) throw new Error('Beta parameters must be finite');
+      return betaSample(() => this._random(), () => this.boxMuller(), alpha, beta);
     }
-    gamma() {
-      let {
-        shape = 1,
-        rate,
-        scale
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    gamma({
+      shape = 1,
+      rate,
+      scale
+    } = {}) {
       validate({
         shape
       }).positive();
@@ -1575,48 +1586,15 @@ var GameRng = (function () {
           rate
         }).positive();
       }
-      let flg;
-      let x2;
-      let v0;
-      let v1;
-      let x;
-      let u;
-      let v = 1;
-      const d = shape - 1 / 3;
-      const c = 1.0 / Math.sqrt(9.0 * d);
-      let i = 0;
-      flg = true;
-      const nq1 = new NonRandomDetector(SAMERANDOM_MAX);
-      while (flg && i++ < LOOP_MAX) {
-        let j = 0;
-        const nq2 = new NonRandomDetector(SAMERANDOM_MAX);
-        do {
-          x = this.normal();
-          nq2.push(x);
-          nq2.detectLoop(`Loop detected in randomly generated numbers over the last ${SAMERANDOM_MAX} generations. This is incompatible with the gamma distribution. Try either using a spread of non-random numbers or fine tune the number to not fall foul ofthe looped way of generating.`);
-          v = 1.0 + c * x;
-        } while (v <= 0.0 && j++ < LOOP_MAX);
-        if (j + 1 >= LOOP_MAX) {
-          throw new Error(`LOOP_MAX reached inside gamma inner loop - bailing out - possible parameter error, or using non-random source? had shape = ${shape}, rate = ${rate}, scale = ${scale}`);
-        }
-        v *= Math.pow(v, 2);
-        x2 = Math.pow(x, 2);
-        v0 = 1.0 - 0.331 * x2 * x2;
-        v1 = 0.5 * x2 + d * (1.0 - v + Math.log(v));
-        u = this._random();
-        nq1.push(u);
-        nq1.detectLoop(`Loop detected in randomly generated numbers over the last ${SAMERANDOM_MAX} generations. This is incompatible with the gamma distribution. Try either using a spread of non-random numbers or fine tune the number to not fall foul of the looped way of generating. Last random number was ${u}`);
-        if (u < v0 || Math.log(u) < v1) {
-          flg = false;
-        }
+      validate({
+        rate
+      }).positive();
+      if (![shape, rate].every(Number.isFinite)) {
+        throw new Error('Gamma shape and rate must be finite');
       }
-      if (i + 1 >= LOOP_MAX) {
-        throw new Error(`LOOP_MAX reached inside gamma - bailing out - possible parameter error, or using non-random source? had shape = ${shape}, rate = ${rate}, scale = ${scale}`);
-      }
-      return rate * d * v;
+      return Math.exp(gammaLog(() => this._random(), () => this.boxMuller(), shape) - Math.log(rate));
     }
-    studentsT() {
-      let nu = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    studentsT(nu = 1) {
       if (typeof nu === 'object') {
         ({
           nu = 1
@@ -1625,15 +1603,14 @@ var GameRng = (function () {
       validate({
         nu
       }).positive();
-      const normal = Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
+      const normal = this.boxMuller();
       const chiSquared = this.gamma({
         shape: nu / 2,
-        rate: 2
+        rate: 0.5
       });
       return normal / Math.sqrt(chiSquared / nu);
     }
-    wignerSemicircle() {
-      let R = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    wignerSemicircle(R = 1) {
       if (typeof R === 'object') {
         ({
           R = 1
@@ -1642,14 +1619,12 @@ var GameRng = (function () {
       validate({
         R
       }).gt(0);
-      const theta = this._random() * 2 * Math.PI;
-      return R * Math.cos(theta);
+      return semicircleSample(() => this._random(), R);
     }
-    kumaraswamy() {
-      let {
-        alpha = 0.5,
-        beta = 0.5
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    kumaraswamy({
+      alpha = 0.5,
+      beta = 0.5
+    } = {}) {
       validate({
         alpha
       }).gt(0);
@@ -1659,11 +1634,10 @@ var GameRng = (function () {
       const u = this._random();
       return Math.pow(1 - Math.pow(1 - u, 1 / beta), 1 / alpha);
     }
-    hermite() {
-      let {
-        lambda1 = 1,
-        lambda2 = 2
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    hermite({
+      lambda1 = 1,
+      lambda2 = 2
+    } = {}) {
       validate({
         lambda1
       }).gt(0);
@@ -1678,8 +1652,7 @@ var GameRng = (function () {
       });
       return x1 + x2;
     }
-    chiSquared() {
-      let k = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    chiSquared(k = 1) {
       if (typeof k === 'object') {
         ({
           k = 1
@@ -1690,13 +1663,12 @@ var GameRng = (function () {
       }).positive().int();
       let sum = 0;
       for (let i = 0; i < k; i++) {
-        const z = Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
+        const z = Math.sqrt(-2 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
         sum += z * z;
       }
       return sum;
     }
-    rayleigh() {
-      let scale = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+    rayleigh(scale = 1) {
       if (typeof scale === 'object') {
         ({
           scale = 1
@@ -1707,44 +1679,40 @@ var GameRng = (function () {
       }).gt(0);
       return scale * Math.sqrt(-2 * Math.log(this._random()));
     }
-    logNormal() {
-      let {
-        mean = 0,
-        stddev = 1
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    logNormal({
+      mean = 0,
+      stddev = 1
+    } = {}) {
       validate({
         stddev
       }).gt(0);
-      const normal = mean + stddev * Math.sqrt(-2.0 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
+      const normal = mean + stddev * Math.sqrt(-2 * Math.log(this._random())) * Math.cos(2.0 * Math.PI * this._random());
       return Math.exp(normal);
     }
-    cauchy() {
-      let {
-        median = 0,
-        scale = 1
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    cauchy({
+      median = 0,
+      scale = 1
+    } = {}) {
       validate({
         scale
       }).gt(0);
       const u = this._random();
       return median + scale * Math.tan(Math.PI * (u - 0.5));
     }
-    laplace() {
-      let {
-        mean = 0,
-        scale = 1
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    laplace({
+      mean = 0,
+      scale = 1
+    } = {}) {
       validate({
         scale
       }).gt(0);
       const u = this._random() - 0.5;
       return mean - scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
     }
-    logistic() {
-      let {
-        mean = 0,
-        scale = 1
-      } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    logistic({
+      mean = 0,
+      scale = 1
+    } = {}) {
       validate({
         scale
       }).gt(0);
@@ -1818,8 +1786,7 @@ var GameRng = (function () {
       }
       return Math.round(this.chancy(input));
     }
-    chancy(input) {
-      let depth = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    chancy(input, depth = 0) {
       if (depth >= MAX_RECURSIONS) {
         if (this.shouldThrowOnMaxRecursionsReached()) {
           throw new MaxRecursionsError('Max recursions reached in chancy. Usually a case of badly chosen min/max values.');
@@ -1890,8 +1857,7 @@ var GameRng = (function () {
       }
       throw new Error('Invalid input given to chancy');
     }
-    chancyMinMax(result, input) {
-      let depth = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    chancyMinMax(result, input, depth = 0) {
       const {
         min,
         max
@@ -2147,74 +2113,18 @@ var GameRng = (function () {
       return chances;
     }
     weightedChoice(data) {
-      let total = 0;
-      let id;
       if (Array.isArray(data)) {
-        // Some shortcuts
-        if (data.length === 0) {
-          return null;
-        }
-        if (data.length === 1) {
-          return data[0];
-        }
-        const chances = this.weights(data);
-        const result = this.weightedChoice(chances);
-        chances.clear();
-        return result;
+        if (data.length === 0) return null;
+        if (data.length === 1) return data[0];
+        return this.weightedChoice(this.weights(data));
       }
-      if (data instanceof Map) {
-        // Some shortcuts
-        if (data.size === 0) {
-          return null;
-        }
-        if (data.size === 1) {
-          return data.keys().next().value;
-        }
-        data.forEach(value => {
-          total += value;
-        });
-      } else {
-        // Some shortcuts
-        const entries = Object.keys(data);
-        if (entries.length === 0) {
-          return null;
-        }
-        if (entries.length === 1) {
-          return entries[0];
-        }
-        for (id in data) {
-          if (data[id] < 0) {
-            throw new Error('Probability cannot be negative');
-          }
-          total += data[id];
-        }
-      }
-      const random = this._random() * total;
-      let part = 0;
-      if (data instanceof Map) {
-        for (const [id, value] of data) {
-          part += value;
-          if (random < part) {
-            return id;
-          }
-        }
-      } else {
-        for (id in data) {
-          part += data[id];
-          if (random < part) {
-            return id;
-          }
-        }
-      }
-      return id;
+      const entries = data instanceof Map ? Array.from(data.entries()) : Object.entries(data);
+      return weightedChoice(entries, () => this._random());
     }
     pool(entries) {
       return new Pool(entries, this);
     }
-    static parseDiceArgs() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-      let d = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 6;
-      let plus = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    static parseDiceArgs(n = 1, d = 6, plus = 0) {
       if (n === null || typeof n === 'undefined' || arguments.length <= 0) {
         throw new Error('Dice expects at least one argument');
       }
@@ -2247,10 +2157,7 @@ var GameRng = (function () {
         plus
       };
     }
-    parseDiceArgs() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-      let d = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 6;
-      let plus = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    parseDiceArgs(n = 1, d = 6, plus = 0) {
       const {
         constructor
       } = Object.getPrototypeOf(this);
@@ -2320,10 +2227,7 @@ var GameRng = (function () {
      * {@inheritDoc RngInterface.diceMax}
      * @group Result Prediction
      */
-    static diceMax() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-      let d = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 6;
-      let plus = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    static diceMax(n = 1, d = 6, plus = 0) {
       ({
         n,
         d,
@@ -2335,10 +2239,7 @@ var GameRng = (function () {
      * {@inheritDoc RngInterface.diceMin}
      * @group Result Prediction
      */
-    static diceMin() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-      let d = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 6;
-      let plus = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    static diceMin(n = 1, d = 6, plus = 0) {
       ({
         n,
         d,
@@ -2346,10 +2247,7 @@ var GameRng = (function () {
       } = this.parseDiceArgs(n, d, plus));
       return n + plus;
     }
-    diceExpanded() {
-      let n = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
-      let d = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 6;
-      let plus = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+    diceExpanded(n = 1, d = 6, plus = 0) {
       ({
         n,
         d,
@@ -2441,6 +2339,9 @@ var GameRng = (function () {
     serialize() {
       return {
         seed: this.getSeed(),
+        streamSeed: this.getStreamSeed(),
+        engine: 'splitmix32-v1',
+        samplingVersion: SAMPLING_VERSION,
         version: CURRENT_VERSION
       };
     }
@@ -2452,10 +2353,16 @@ var GameRng = (function () {
     }
     from(other) {
       this.setSeed(other.getSeed());
+      this.setStreamSeed(other.getStreamSeed());
       return this;
     }
+    /** Create a repeatable named child without consuming or sharing parent state. */
+    fork(label) {
+      if (typeof label !== 'string' || label.length === 0) throw new Error('Stream label must be a non-empty string');
+      return new Rng(JSON.stringify(['gamerng-stream-v1', this.getStreamSeed(), label]));
+    }
     _next() {
-      this.setSeed(this.getSeed() + 0x9e3779b9 | 0);
+      this.setStateSeed(this.getSeed() + 0x9e3779b9 | 0);
       let z = this.getSeed();
       z ^= z >>> 16;
       z = Math.imul(z, 0x21f0aaad);
@@ -2478,9 +2385,7 @@ var GameRng = (function () {
         getUniformInt(lowerBound, upperBound) {
           return rng.randInt(lowerBound, upperBound);
         },
-        getNormal() {
-          let mean = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-          let stddev = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
+        getNormal(mean = 0, stddev = 1) {
           return rng.boxMuller({
             mean,
             stddev
@@ -2510,6 +2415,7 @@ var GameRng = (function () {
         },
         setState(state) {
           rng.setSeed(state.seed);
+          rng.setStreamSeed(state.streamSeed ?? state.seed);
           return this;
         },
         clone() {
